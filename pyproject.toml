@@ -1,0 +1,36 @@
+[project]
+name = "evolution-of-todo"
+version = "0.1.0"
+description = "Phase I: In-memory console todo application"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pydantic>=2.0.0",
+    "rich>=13.7.0",
+    "typer>=0.15.0",
+]
+
+[project.scripts]
+todo = "src.ui.cli:app"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.8.0",
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+no_implicit_optional = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
