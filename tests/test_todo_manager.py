@@ -262,7 +262,7 @@ class TestTodoManagerComplete:
         manager = TodoManager()
         todo = manager.add_todo("Task")
 
-        completed = manager.complete_todo(todo.id)
+        completed, _ = manager.complete_todo(todo.id)
         assert completed is not None
         assert completed.status == "completed"
 
@@ -270,7 +270,7 @@ class TestTodoManagerComplete:
         """Test completing non-existent todo returns None."""
         manager = TodoManager()
         result = manager.complete_todo(999)
-        assert result is None
+        assert result == (None, None)
 
     def test_complete_already_completed_todo(self) -> None:
         """Test completing already completed todo (idempotent)."""
@@ -278,7 +278,7 @@ class TestTodoManagerComplete:
         todo = manager.add_todo("Task")
 
         manager.complete_todo(todo.id)
-        completed_again = manager.complete_todo(todo.id)
+        completed_again, _ = manager.complete_todo(todo.id)
 
         assert completed_again is not None
         assert completed_again.status == "completed"
@@ -289,7 +289,7 @@ class TestTodoManagerComplete:
         todo = manager.add_todo("Task")
         original_time = todo.updated_at
 
-        completed = manager.complete_todo(todo.id)
+        completed, _ = manager.complete_todo(todo.id)
         assert completed is not None
         assert completed.updated_at >= original_time
 
@@ -350,7 +350,7 @@ class TestTodoManagerEdgeCases:
         assert updated.status == "in_progress"
 
         # Complete
-        completed = manager.complete_todo(1)
+        completed, _ = manager.complete_todo(1)
         assert completed is not None
         assert completed.status == "completed"
 
