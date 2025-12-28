@@ -20,7 +20,7 @@ def add(
     priority: str = typer.Option("medium", "--priority", "-p", help="Priority (high/medium/low)"),
     tags: Optional[str] = typer.Option(None, "--tags", "-t", help="Tags (comma-separated)"),
     due_date: Optional[str] = typer.Option(None, "--due-date", help="Due date (YYYY-MM-DD HH:MM)"),
-    recurrence: Optional[str] = typer.Option(None, "--recurrence", "-r", help="Recurrence pattern (daily/weekly/monthly)")
+    recurrence: Optional[str] = typer.Option(None, "--recurrence", "-r", help="Recurrence pattern (daily/weekly/monthly/yearly)")
 ) -> None:
     """Add a new todo item."""
     # T023: Validate priority
@@ -29,8 +29,8 @@ def add(
         raise typer.Exit(1)
 
     # T106: Validate recurrence
-    if recurrence and recurrence not in ["daily", "weekly", "monthly"]:
-        console.print(f"[red]Error:[/red] Invalid --recurrence '{recurrence}'. Must be one of: daily, weekly, monthly")
+    if recurrence and recurrence not in ["daily", "weekly", "monthly", "yearly"]:
+        console.print(f"[red]Error:[/red] Invalid --recurrence '{recurrence}'. Must be one of: daily, weekly, monthly, yearly")
         raise typer.Exit(1)
 
     # T024: Parse tags from comma-separated string
@@ -386,7 +386,7 @@ def update(
     priority: Optional[str] = typer.Option(None, "--priority", "-p", help="New priority (high/medium/low)"),
     tags: Optional[str] = typer.Option(None, "--tags", "-t", help="New tags (comma-separated, replaces existing)"),
     due_date: Optional[str] = typer.Option(None, "--due-date", help="New due date (YYYY-MM-DD HH:MM or 'none' to clear)"),
-    recurrence: Optional[str] = typer.Option(None, "--recurrence", "-r", help="New recurrence pattern (daily/weekly/monthly or 'none' to remove)")
+    recurrence: Optional[str] = typer.Option(None, "--recurrence", "-r", help="New recurrence pattern (daily/weekly/monthly/yearly or 'none' to remove)")
 ) -> None:
     """Update a todo's fields."""
     # Validate at least one field is provided
@@ -429,8 +429,8 @@ def update(
     if recurrence:
         if recurrence.lower() == "none":
             clear_recurrence = True
-        elif recurrence not in ["daily", "weekly", "monthly"]:
-            console.print(f"[red]Error:[/red] Invalid --recurrence '{recurrence}'. Must be one of: daily, weekly, monthly, none")
+        elif recurrence not in ["daily", "weekly", "monthly", "yearly"]:
+            console.print(f"[red]Error:[/red] Invalid --recurrence '{recurrence}'. Must be one of: daily, weekly, monthly, yearly, none")
             raise typer.Exit(1)
         else:
             recurrence_pattern = recurrence
@@ -479,6 +479,148 @@ def update(
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
+
+
+@app.command()
+def load(
+    category: str = typer.Argument(..., help="Category to load (prayer/school/ramzan/all)")
+) -> None:
+    """Quick load predefined category tasks."""
+    from src.core.presets import LifePresets
+    from datetime import datetime, timedelta
+
+    category_lower = category.lower()
+
+    if category_lower == "all":
+        # Load all categories
+        console.print("\n[bold yellow]Loading ALL 15 categories...[/bold yellow]\n")
+        total_count = 0
+
+        for cat_key in LifePresets.get_all_category_keys():
+            tasks = LifePresets.get_category_tasks(cat_key)
+            for task_data in tasks:
+                # Set smart due dates
+                due_date = None
+                if task_data.get("recurrence_pattern") == "daily":
+                    due_date = datetime.now() + timedelta(hours=2)
+                elif task_data.get("recurrence_pattern") == "weekly":
+                    due_date = datetime.now() + timedelta(hours=24)
+                elif task_data.get("recurrence_pattern") == "monthly":
+                    due_date = datetime.now() + timedelta(days=7)
+                else:
+                    due_date = datetime.now() + timedelta(hours=6)
+
+                manager.add_todo(
+                    title=task_data["title"],
+                    description=task_data.get("description", ""),
+                    priority=task_data.get("priority", "medium"),
+                    tags=task_data.get("tags", []),
+                    due_date=due_date,
+                    recurrence_pattern=task_data.get("recurrence_pattern")
+                )
+                total_count += 1
+
+        console.print(f"\n[bold green][OK] Successfully loaded {total_count} tasks across 15 categories![/bold green]\n")
+
+    elif category_lower in LifePresets.ALL_CATEGORIES:
+        # Load specific category
+        category_name = LifePresets.CATEGORY_NAMES[category_lower]
+        console.print(f"\n[bold yellow]Loading {category_name}...[/bold yellow]\n")
+
+        tasks = LifePresets.get_category_tasks(category_lower)
+        count = 0
+
+        for task_data in tasks:
+            # Set smart due dates
+            due_date = None
+            if task_data.get("recurrence_pattern") == "daily":
+                due_date = datetime.now() + timedelta(hours=2)
+            elif task_data.get("recurrence_pattern") == "weekly":
+                due_date = datetime.now() + timedelta(hours=24)
+            elif task_data.get("recurrence_pattern") == "monthly":
+                due_date = datetime.now() + timedelta(days=7)
+            else:
+                due_date = datetime.now() + timedelta(hours=6)
+
+            manager.add_todo(
+                title=task_data["title"],
+                description=task_data.get("description", ""),
+                priority=task_data.get("priority", "medium"),
+                tags=task_data.get("tags", []),
+                due_date=due_date,
+                recurrence_pattern=task_data.get("recurrence_pattern")
+            )
+            count += 1
+
+        console.print(f"\n[bold green][OK] {count} {category_name} tasks loaded![/bold green]\n")
+
+    else:
+        console.print(f"\n[red]Error:[/red] Category '{category}' not found!\n")
+        console.print("[yellow]Available categories:[/yellow]")
+        for key, name in LifePresets.CATEGORY_NAMES.items():
+            console.print(f"  - {key}: {name}")
+        console.print(f"  - all: Load ALL categories\n")
+        raise typer.Exit(1)
+
+
+@app.command()
+def stats() -> None:
+    """Show category-wise completion statistics."""
+    from src.core.presets import LifePresets
+    from rich import box
+
+    console.print()
+    console.print("[bold cyan]=== CATEGORY-WISE PROGRESS ===[/bold cyan]\n")
+
+    stats_table = Table(show_header=True, header_style="bold magenta", box=box.ROUNDED)
+    stats_table.add_column("Category", style="cyan", width=20)
+    stats_table.add_column("Total", justify="center", width=8)
+    stats_table.add_column("Completed", justify="center", width=10)
+    stats_table.add_column("Pending", justify="center", width=8)
+    stats_table.add_column("Progress", justify="center", width=12)
+
+    all_tasks = manager.list_todos()
+
+    for category_key, category_name in LifePresets.CATEGORY_NAMES.items():
+        # Get tasks for this category
+        category_tasks = [t for t in all_tasks if category_key in [tag.lower() for tag in t.tags]]
+
+        if category_tasks:
+            total = len(category_tasks)
+            completed = len([t for t in category_tasks if t.status == "completed"])
+            pending = total - completed
+            progress = (completed / total * 100) if total > 0 else 0
+
+            progress_bar = f"{progress:.0f}%"
+            if progress >= 75:
+                progress_display = f"[green]{progress_bar}[/green]"
+            elif progress >= 50:
+                progress_display = f"[yellow]{progress_bar}[/yellow]"
+            else:
+                progress_display = f"[red]{progress_bar}[/red]"
+
+            stats_table.add_row(
+                category_name,
+                str(total),
+                f"[green]{completed}[/green]",
+                f"[yellow]{pending}[/yellow]",
+                progress_display
+            )
+
+    console.print(stats_table)
+
+    # Overall summary
+    total_tasks = len(all_tasks)
+    if total_tasks > 0:
+        total_completed = len([t for t in all_tasks if t.status == "completed"])
+        overall_progress = (total_completed / total_tasks * 100)
+
+        console.print()
+        console.print(f"[bold]Overall Progress:[/bold] {total_completed}/{total_tasks} tasks ([cyan]{overall_progress:.1f}%[/cyan])")
+    else:
+        console.print("\n[yellow]No tasks loaded yet. Use 'load' command to add tasks.[/yellow]")
+
+    console.print()
 
 
 if __name__ == "__main__":

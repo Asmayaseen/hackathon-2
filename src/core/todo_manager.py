@@ -339,6 +339,13 @@ class TodoManager:
                 # Handle day overflow (e.g., Jan 31 -> Feb 28/29)
                 day = min(completed.due_date.day, monthrange(year, month)[1])
                 next_due = completed.due_date.replace(year=year, month=month, day=day)
+            elif completed.recurrence_pattern == "yearly":
+                # Add one year (handle leap year edge case: Feb 29 -> Feb 28)
+                year = completed.due_date.year + 1
+                month = completed.due_date.month
+                # Handle Feb 29 -> Feb 28 for non-leap years
+                day = min(completed.due_date.day, monthrange(year, month)[1])
+                next_due = completed.due_date.replace(year=year, month=month, day=day)
             else:
                 # Shouldn't happen due to Literal type, but handle gracefully
                 return (completed, None)
