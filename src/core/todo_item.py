@@ -70,7 +70,7 @@ class TodoItem(BaseModel):
         default=None,
         description="Task deadline (ISO 8601 format)"
     )
-    recurrence_pattern: Literal["daily", "weekly", "monthly"] | None = Field(
+    recurrence_pattern: Literal["daily", "weekly", "monthly", "yearly"] | None = Field(
         default=None,
         description="Auto-repeat schedule"
     )
@@ -112,7 +112,7 @@ class TodoItem(BaseModel):
     # T011: Recurrence validation
     @field_validator("recurrence_pattern")
     @classmethod
-    def validate_recurrence(cls, v: Literal["daily", "weekly", "monthly"] | None) -> Literal["daily", "weekly", "monthly"] | None:
+    def validate_recurrence(cls, v: Literal["daily", "weekly", "monthly", "yearly"] | None) -> Literal["daily", "weekly", "monthly", "yearly"] | None:
         """Validate recurrence pattern (Literal type enforces valid values)."""
         # No additional validation needed - Literal type enforces valid values
         return v

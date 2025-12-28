@@ -97,6 +97,46 @@ This demonstrates:
 - Updating todo fields
 - Deleting todos
 
+### Life Manager (15 Predefined Categories)
+
+Transform your todo app into a complete life management system with one command:
+
+```bash
+# Interactive category selector with 15 life areas
+uv run python interactive_life_manager.py
+```
+
+**Available Categories:**
+1. Prayer Schedule - 5 daily prayers with reminders
+2. School Management - Classes, homework, exams
+3. Ramzan Tracker - Sehri, Iftar, Taraweeh, Quran
+4. Fitness & Health - Workouts, nutrition, wellness
+5. Home Chores - Cleaning, laundry, shopping
+6. Meal Planning - Daily meals and meal prep
+7. Freelance Work - Clients, invoices, projects
+8. Job Hunting - Applications, interviews
+9. Content Creation - YouTube, blogging, social media
+10. Finance - Bills, budgets, savings
+11. Learning & Coding - LeetCode, courses, practice
+12. Language Learning - Duolingo, vocabulary, speaking
+13. Family & Kids - Quality time, events, bonding
+14. Self-Care - Meditation, journaling, hobbies
+15. Events & Occasions - Birthdays, celebrations
+
+**Quick CLI Commands:**
+```bash
+# Load specific category
+uv run python main.py load prayer      # 5 prayers loaded instantly
+uv run python main.py load ramzan      # Ramzan routine ready
+uv run python main.py load school      # School tasks loaded
+
+# Load all 15 categories at once (126 tasks!)
+uv run python main.py load all
+
+# View category-wise progress dashboard
+uv run python main.py stats
+```
+
 ### Feature Demonstrations
 
 **User Story 1: Priorities & Tags**
@@ -110,6 +150,57 @@ Demonstrates: Priority levels, tag filtering, tag normalization, combined filter
 uv run python test_us2_demo.py
 ```
 Demonstrates: Keyword search, case-insensitive matching, combined filters, empty results
+
+### 🚀 Real-World Use Cases - 15 Demo Scripts
+
+Explore how this todo app can be used for different aspects of life with our comprehensive demo collection:
+
+```bash
+# View all demos overview
+uv run python demos/all_demos_stats.py
+```
+
+#### Available Demos:
+
+| # | Category | Demo Script | Use Case |
+|---|----------|-------------|----------|
+| 01 | Prayer Schedule | `demos/01_demo_prayer.py` | 5 daily prayers with auto-reminders |
+| 02 | School Management | `demos/02_demo_school.py` | Classes, homework, exams tracking |
+| 03 | Ramzan Tracker | `demos/03_demo_ramzan.py` | 30-day Sehri/Iftar/Taraweeh schedule |
+| 04 | Fitness & Health | `demos/04_demo_fitness.py` | Workouts, nutrition, wellness goals |
+| 05 | Home Chores | `demos/05_demo_chores.py` | Cleaning, laundry, shopping lists |
+| 06 | Meal Planning | `demos/06_demo_meal.py` | Daily meals and meal prep |
+| 07 | Freelance Work | `demos/07_demo_freelance.py` | Client projects and invoicing |
+| 08 | Job Hunting | `demos/08_demo_jobhunt.py` | Applications and interviews |
+| 09 | Content Creation | `demos/09_demo_content.py` | YouTube, blogging, social media |
+| 10 | Finance | `demos/10_demo_finance.py` | Bills, budgets, savings tracking |
+| 11 | Learning & Coding | `demos/11_demo_learning.py` | LeetCode, courses, skill development |
+| 12 | Language Learning | `demos/12_demo_language.py` | Duolingo, vocabulary, speaking practice |
+| 13 | Family & Kids | `demos/13_demo_family.py` | Quality time, events, bonding |
+| 14 | Self-Care | `demos/14_demo_selfcare.py` | Meditation, journaling, hobbies |
+| 15 | Events | `demos/15_demo_events.py` | Birthdays, celebrations, occasions |
+
+**Quick Start:**
+```bash
+# Prayer schedule with recurring daily tasks
+uv run python demos/01_demo_prayer.py
+
+# School management - classes, homework, exams
+uv run python demos/02_demo_school.py
+
+# Ramzan 30-day tracker
+uv run python demos/03_demo_ramzan.py
+
+# Fitness and health goals
+uv run python demos/04_demo_fitness.py
+```
+
+Each demo creates realistic tasks demonstrating:
+- ✅ Recurring tasks (daily/weekly/monthly)
+- ✅ Due dates and 30-minute reminders
+- ✅ Priority levels (high/medium/low)
+- ✅ Multi-tag organization
+- ✅ Search and filtering capabilities
 
 ### Usage Examples
 

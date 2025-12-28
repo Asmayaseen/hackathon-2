@@ -179,12 +179,20 @@ This project simulates the real-world evolution of software. You will start with
 * README.md with setup instructions  
 * CLAUDE.md with Claude Code instructions  
     
-2. Working console application demonstrating:  
-* Adding tasks with title and description  
-* Listing all tasks with status indicators  
-* Updating task details  
-* Deleting tasks by ID  
+2. Working console application demonstrating:
+* Adding tasks with title and description
+* Listing all tasks with status indicators
+* Updating task details
+* Deleting tasks by ID
 * Marking tasks as complete/incomplete
+
+3. Interactive Life Manager system (`uv run python interactive_life_manager.py`):
+* 15 predefined life categories: Prayer Schedule, School Management, Ramzan Tracker, Fitness & Health, Home Chores, Meal Planning, Freelance Work, Job Hunting, Content Creation, Finance, Learning & Coding, Language Learning, Family & Kids, Self-Care, Events & Occasions
+* Interactive menu for category selection and management
+* CLI commands for quick category loading (`load <category>`, `load all`, `stats`)
+* 49 predefined tasks across 15 life areas with recurring patterns (daily/weekly/monthly)
+* Category-wise progress dashboard with completion statistics
+* Smart due date generation based on recurrence patterns
 
 ## **Windows Users: WSL 2 Setup**
 
