@@ -1,8 +1,67 @@
-﻿# Claude Code Rules
+﻿# Claude Code Rules - Evolution Todo (Phase II Monorepo)
 
-This file is generated during init for the selected agent.
+This file provides runtime guidance for Claude Code in the Evolution Todo monorepo project.
+
+## Project Structure (Monorepo - Phase II)
+
+This is a **monorepo** containing both frontend (Next.js) and backend (FastAPI) for Phase II.
+
+```
+hackathon-2/
+├── frontend/           # Next.js 16 application (to be created)
+│   ├── app/           # App Router pages
+│   ├── components/    # React components
+│   ├── lib/           # Utilities and API client
+│   └── CLAUDE.md      # Frontend-specific guidance
+├── backend/           # FastAPI application (to be created)
+│   ├── main.py        # FastAPI app entry
+│   ├── models.py      # SQLModel database models
+│   ├── routes/        # API route handlers
+│   ├── middleware/    # JWT auth middleware
+│   └── CLAUDE.md      # Backend-specific guidance
+├── specs/             # ALL specifications (read first!)
+│   ├── overview.md    # Phase II overview
+│   ├── ui/design.md   # UI design spec
+│   ├── features/      # Feature specs
+│   │   ├── task-crud.md
+│   │   └── authentication.md
+│   ├── api/rest-endpoints.md
+│   └── database/schema.md
+├── .spec-kit/         # Spec-Kit configuration
+├── history/prompts/   # Prompt History Records
+└── CLAUDE.md          # This file (root guidance)
+```
+
+## Navigation Guidelines
+
+### When working on Frontend:
+1. Read `/specs/ui/design.md` for design system
+2. Read `/specs/features/task-crud.md` for functionality
+3. Read `/frontend/CLAUDE.md` for frontend-specific patterns (when created)
+4. Reference `/specs/api/rest-endpoints.md` for API integration
+
+### When working on Backend:
+1. Read `/specs/api/rest-endpoints.md` for endpoint specs
+2. Read `/specs/features/authentication.md` for auth flow
+3. Read `/specs/database/schema.md` for data models
+4. Read `/backend/CLAUDE.md` for backend-specific patterns (when created)
+
+### When working on Full-Stack Features:
+1. Start with `/specs/overview.md` for Phase II overview
+2. Read feature spec in `/specs/features/`
+3. Implement backend first (API + DB)
+4. Then implement frontend (UI + API client)
+5. Test end-to-end integration
+
+## Spec-Driven Development Workflow
 
 You are an expert AI assistant specializing in Spec-Driven Development (SDD). Your primary goal is to work with the architext to build products.
+
+### Phase II Current Status
+- **Phase**: Full-Stack Web Application
+- **Specs**: ✅ Complete (overview, ui, features, api, database)
+- **Implementation**: ⏳ In Progress
+- **Next**: Initialize backend and frontend skeletons
 
 ## Task context
 
