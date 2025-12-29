@@ -1,0 +1,176 @@
+name: evolution-todo
+version: "2.0"
+phase: phase-2-fullstack
+
+structure:
+  specs_dir: specs
+  features_dir: specs/features
+  api_dir: specs/api
+  database_dir: specs/database
+  ui_dir: specs/ui
+  history_dir: history
+  prompts_dir: history/prompts
+  adr_dir: history/adr
+
+phases:
+  - name: phase-1-console
+    description: In-Memory Python Console App
+    features: [basic-crud, life-manager, yearly-recurrence]
+    status: completed
+    deliverables:
+      - src/core/todo_manager.py
+      - src/core/presets.py
+      - interactive_life_manager.py
+      - tests/test_todo_manager.py
+
+  - name: phase-2-fullstack
+    description: Full-Stack Web Application
+    features: [task-crud, authentication]
+    status: in-progress
+    deliverables:
+      - backend/ (FastAPI + SQLModel + Neon DB)
+      - frontend/ (Next.js 16 + Better Auth)
+      - specs/ (All specifications)
+    requirements:
+      - Implement all 5 Basic Level features
+      - Create 6 RESTful API endpoints
+      - Build responsive frontend interface
+      - Store data in Neon PostgreSQL
+      - Authentication with Better Auth + JWT
+
+  - name: phase-3-chatbot
+    description: AI-Powered Todo Chatbot
+    features: [task-crud, authentication, chatbot-interface, mcp-server]
+    status: not-started
+
+  - name: phase-4-k8s-local
+    description: Local Kubernetes Deployment
+    features: [task-crud, authentication, chatbot-interface, docker, minikube, helm]
+    status: not-started
+
+  - name: phase-5-cloud
+    description: Advanced Cloud Deployment
+    features: [task-crud, authentication, chatbot-interface, kafka, dapr, cloud-k8s]
+    status: not-started
+
+features:
+  basic-crud:
+    name: Basic CRUD Operations (Console)
+    spec: specs/001-advanced-todo-features/spec.md
+    status: completed
+    phase: phase-1-console
+
+  life-manager:
+    name: Interactive Life Manager
+    spec: specs/001-advanced-todo-features/spec.md
+    status: completed
+    phase: phase-1-console
+
+  yearly-recurrence:
+    name: Yearly Recurrence Support
+    spec: specs/001-advanced-todo-features/spec.md
+    status: completed
+    phase: phase-1-console
+
+  task-crud:
+    name: Task CRUD Operations (Web)
+    spec: specs/features/task-crud.md
+    status: in-progress
+    phase: phase-2-fullstack
+    api: specs/api/rest-endpoints.md
+    database: specs/database/schema.md
+
+  authentication:
+    name: User Authentication (Better Auth + JWT)
+    spec: specs/features/authentication.md
+    status: in-progress
+    phase: phase-2-fullstack
+    api: specs/api/rest-endpoints.md
+    database: specs/database/schema.md
+
+tech_stack:
+  phase_1:
+    language: Python 3.13+
+    package_manager: uv
+    tools: [Claude Code, Spec-Kit Plus]
+
+  phase_2:
+    frontend:
+      framework: Next.js 16+
+      styling: Tailwind CSS 4.x
+      components: shadcn/ui
+      icons: Lucide React
+      animations: Framer Motion
+      theme: next-themes
+      auth: Better Auth
+    backend:
+      framework: FastAPI
+      orm: SQLModel
+      database: Neon Serverless PostgreSQL
+      auth: JWT
+    tools: [Claude Code, Spec-Kit Plus, Vercel, Railway/Render]
+
+  phase_3:
+    frontend: OpenAI ChatKit
+    ai_framework: OpenAI Agents SDK
+    mcp_server: Official MCP SDK
+
+  phase_4:
+    containerization: Docker + Docker AI (Gordon)
+    orchestration: Kubernetes (Minikube)
+    package_manager: Helm Charts
+    ai_devops: [kubectl-ai, kagent]
+
+  phase_5:
+    event_streaming: Kafka (Redpanda Cloud/Strimzi)
+    app_runtime: Dapr
+    cloud: DigitalOcean DOKS / GKE / AKS
+
+constitution:
+  file: .specify/memory/constitution.md
+  version: "1.0.0"
+  principles:
+    - Spec-Driven Development (NON-NEGOTIABLE)
+    - Phased Evolution
+    - Technology Stack Adherence
+    - Independent User Stories
+    - Test-Driven Development (Conditional)
+    - Stateless Architecture
+    - Documentation and Traceability
+
+development_workflow:
+  stages:
+    - specify: Create requirements and user stories
+    - plan: Design architecture and technical approach
+    - tasks: Break down into atomic work units
+    - implement: Execute via Claude Code
+    - record: Create PHRs for audit trail
+
+submission:
+  hackathon: Evolution of Todo
+  points:
+    phase_1: 100
+    phase_2: 150
+    phase_3: 200
+    phase_4: 250
+    phase_5: 300
+    total: 1000
+  bonus:
+    reusable_intelligence: 200
+    cloud_native_blueprints: 200
+    multilingual_support: 100
+    voice_commands: 200
+    total_bonus: 600
+  deadlines:
+    phase_1: 2025-12-07
+    phase_2: 2025-12-14
+    phase_3: 2025-12-21
+    phase_4: 2026-01-04
+    phase_5: 2026-01-18
+
+metadata:
+  created: 2025-12-28
+  updated: 2025-12-28
+  current_phase: phase-2-fullstack
+  repository: https://github.com/Asmayaseen/hackathon-2
+  maintainer: asmayaseen
