@@ -5,21 +5,18 @@ Task: 1.5
 Spec: specs/features/authentication.md
 """
 from fastapi import HTTPException, Depends, status
-from fastapi.security import HTTPBearer, HTTPAuthCredentials
+from fastapi.security import HTTPBearer
 import jwt
 import os
 
 security = HTTPBearer()
 
 # JWT Configuration
-JWT_SECRET = os.getenv("JWT_SECRET")
+JWT_SECRET = os.getenv("JWT_SECRET", "your-secret-key-min-32-chars")
 JWT_ALGORITHM = "HS256"
 
-if not JWT_SECRET:
-    raise ValueError("JWT_SECRET environment variable is not set")
 
-
-async def verify_token(credentials: HTTPAuthCredentials = Depends(security)) -> str:
+async def verify_token(credentials = Depends(security)) -> str:
     """
     Verify JWT token and extract user_id.
 

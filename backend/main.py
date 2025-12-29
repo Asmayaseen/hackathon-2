@@ -4,6 +4,9 @@ Evolution Todo API - FastAPI Backend
 Task: 1.6
 Spec: specs/overview.md
 """
+from dotenv import load_dotenv
+load_dotenv()  # Load .env file first
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from db import create_db_and_tables
@@ -46,5 +49,7 @@ def root():
 
 # Import and include routers
 from routes.tasks import router as tasks_router
+from routes.auth import router as auth_router
 
 app.include_router(tasks_router)
+app.include_router(auth_router)
