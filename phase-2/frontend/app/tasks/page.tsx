@@ -53,6 +53,7 @@ export default function TasksPage() {
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
+    document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
     localStorage.removeItem('user_id');
     localStorage.removeItem('user_email');
     localStorage.removeItem('user_name');
