@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://evolution-todo-production.up.railway.app/api/:path*"
+      "destination": "https://asmayaseen-evolution-todo-api.hf.space/api/:path*"
     }
   ]
 }
