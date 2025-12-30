@@ -1,7 +1,7 @@
 ---
 title: Evolution Todo API
 emoji: ✅
-colorFrom: cyan
+colorFrom: blue
 colorTo: purple
 sdk: docker
 pinned: false
