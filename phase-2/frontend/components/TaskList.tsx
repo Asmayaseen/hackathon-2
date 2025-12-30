@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { api, Task, TasksResponse } from '@/lib/api';
+import { api, Task, TasksResponse } from '../lib/api';
 import TaskItem from './TaskItem';
 
 interface TaskListProps {

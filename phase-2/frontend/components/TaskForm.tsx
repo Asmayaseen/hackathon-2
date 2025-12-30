@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { api, TaskCreate } from '@/lib/api';
+import { api, TaskCreate } from '../lib/api';
 
 interface TaskFormProps {
   userId: string;

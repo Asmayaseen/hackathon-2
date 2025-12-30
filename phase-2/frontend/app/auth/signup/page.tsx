@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { api } from '@/lib/api';
-import ThemeToggle from '@/components/ThemeToggle';
+import { api } from '../../../lib/api';
+import ThemeToggle from '../../../components/ThemeToggle';
 
 export default function SignupPage() {
   const [name, setName] = useState('');

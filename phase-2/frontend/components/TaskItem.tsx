@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { api, Task, TaskUpdate } from '@/lib/api';
+import { api, Task, TaskUpdate } from '../lib/api';
 
 interface TaskItemProps {
   task: Task;

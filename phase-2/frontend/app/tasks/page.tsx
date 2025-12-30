@@ -3,12 +3,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import TaskForm from '@/components/TaskForm';
-import TaskList from '@/components/TaskList';
-import StatsCard from '@/components/StatsCard';
-import ProgressBar from '@/components/ProgressBar';
-import ThemeToggle from '@/components/ThemeToggle';
-import { api, TasksResponse } from '@/lib/api';
+import TaskForm from '../../components/TaskForm';
+import TaskList from '../../components/TaskList';
+import StatsCard from '../../components/StatsCard';
+import ProgressBar from '../../components/ProgressBar';
+import ThemeToggle from '../../components/ThemeToggle';
+import { api, TasksResponse } from '../../lib/api';
 
 export default function TasksPage() {
   const router = useRouter();
