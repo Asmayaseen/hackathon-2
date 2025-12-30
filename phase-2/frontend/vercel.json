@@ -1,16 +1,10 @@
 {
   "version": 2,
+  "framework": "nextjs",
   "rewrites": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/index.py"
-    }
-  ],
-  "redirects": [
-    {
-      "source": "/api",
-      "destination": "/api/",
-      "permanent": true
+      "source": "/api/:path*",
+      "destination": "https://evolution-todo-production.up.railway.app/api/:path*"
     }
   ]
 }

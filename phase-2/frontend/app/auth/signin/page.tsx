@@ -22,11 +22,16 @@ export default function SigninPage() {
       const response = await api.signin(email, password);
 
       localStorage.setItem('auth_token', response.token);
+
+      // Simpler cookie setting for maximum browser compatibility
+      document.cookie = "auth_token=" + response.token + "; path=/; SameSite=Lax; max-age=604800";
+
       localStorage.setItem('user_id', response.user.id);
       localStorage.setItem('user_email', response.user.email);
       localStorage.setItem('user_name', response.user.name);
 
-      router.push('/tasks');
+      // Force a hard redirect to ensure cookies are sent and middleware triggers
+      window.location.href = '/tasks';
     } catch (err: any) {
       const message = err.response?.data?.detail || 'Invalid credentials';
       setError(message);
