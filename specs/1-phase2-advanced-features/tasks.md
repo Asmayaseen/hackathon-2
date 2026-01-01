@@ -29,12 +29,12 @@ Based on plan.md, this is a **web application monorepo**:
 
 ### Setup Tasks
 
-- [ ] T001 Install backend dependencies: `pip install cron-validator` in phase-2/backend/
-- [ ] T002 Install frontend dependencies: `npm install date-fns chart.js react-chartjs-2 react-hotkeys-hook papaparse @headlessui/react` in phase-2/frontend/
-- [ ] T003 Create database migration file: phase-2/backend/migrations/002_phase2_advanced.sql from data-model.md
-- [ ] T004 Run database migration to add new tables and columns
-- [ ] T005 Verify migration success: check tasks table columns, verify new tables exist (task_history, user_preferences, tags, notifications)
-- [ ] T006 [P] Update requirements.txt with new dependencies: phase-2/backend/requirements.txt
+- [X] T001 Install backend dependencies: `pip install cron-validator` in phase-2/backend/
+- [X] T002 Install frontend dependencies: `npm install date-fns chart.js react-chartjs-2 react-hotkeys-hook papaparse @headlessui/react` in phase-2/frontend/
+- [X] T003 Create database migration file: phase-2/backend/migrations/002_phase2_advanced.sql from data-model.md
+- [X] T004 Run database migration to add new tables and columns
+- [X] T005 Verify migration success: check tasks table columns, verify new tables exist (task_history, user_preferences, tags, notifications)
+- [X] T006 [P] Update requirements.txt with new dependencies: phase-2/backend/requirements.txt
 - [ ] T007 [P] Update package.json with new dependencies: phase-2/frontend/package.json
 - [ ] T008 [P] Add Tailwind custom colors for priorities (red, yellow, green) in phase-2/frontend/tailwind.config.js
 
@@ -50,13 +50,13 @@ Based on plan.md, this is a **web application monorepo**:
 
 ### Backend Foundation
 
-- [ ] T009 Extend Task model in phase-2/backend/models.py with new fields: due_date, priority, tags, recurrence_pattern, reminder_offset, is_recurring, parent_recurring_id
-- [ ] T010 [P] Create TaskHistory model in phase-2/backend/models.py
-- [ ] T011 [P] Create UserPreferences model in phase-2/backend/models.py
-- [ ] T012 [P] Create Tag model in phase-2/backend/models.py
-- [ ] T013 [P] Create Notification model in phase-2/backend/models.py
+- [X] T009 Extend Task model in phase-2/backend/models.py with new fields: due_date, priority, tags, recurrence_pattern, reminder_offset, is_recurring, parent_recurring_id
+- [X] T010 [P] Create TaskHistory model in phase-2/backend/models.py
+- [X] T011 [P] Create UserPreferences model in phase-2/backend/models.py
+- [X] T012 [P] Create Tag model in phase-2/backend/models.py
+- [X] T013 [P] Create Notification model in phase-2/backend/models.py
 - [ ] T014 Update db.py to create new tables on startup: phase-2/backend/db.py
-- [ ] T015 [P] Create enums for Priority and Theme in phase-2/backend/models.py
+- [X] T015 [P] Create enums for Priority and Theme in phase-2/backend/models.py
 - [ ] T016 [P] Add tsvector trigger function for search in migration script
 
 ### Frontend Foundation
