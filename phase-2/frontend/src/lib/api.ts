@@ -64,6 +64,14 @@ export interface Task {
   completed: boolean;
   created_at: string;
   updated_at: string;
+  // Phase 2 Advanced Features (T019)
+  due_date?: string;
+  priority: 'high' | 'medium' | 'low' | 'none';
+  tags: string[];
+  recurrence_pattern?: string;
+  reminder_offset?: number;
+  is_recurring: boolean;
+  parent_recurring_id?: number;
 }
 
 export interface TasksResponse {
@@ -78,12 +86,24 @@ export interface TasksResponse {
 export interface TaskCreate {
   title: string;
   description?: string;
+  // Phase 2 Advanced Features (T019)
+  due_date?: string;
+  priority?: 'high' | 'medium' | 'low' | 'none';
+  tags?: string[];
+  recurrence_pattern?: string;
+  reminder_offset?: number;
 }
 
 export interface TaskUpdate {
   title?: string;
   description?: string;
   completed?: boolean;
+  // Phase 2 Advanced Features (T019)
+  due_date?: string;
+  priority?: 'high' | 'medium' | 'low' | 'none';
+  tags?: string[];
+  recurrence_pattern?: string;
+  reminder_offset?: number;
 }
 
 // API Methods

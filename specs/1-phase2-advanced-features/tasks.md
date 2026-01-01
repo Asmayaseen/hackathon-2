@@ -61,11 +61,11 @@ Based on plan.md, this is a **web application monorepo**:
 
 ### Frontend Foundation
 
-- [ ] T017 [P] Extend TaskItem component to display new fields: phase-2/frontend/src/components/TaskItem.tsx
-- [ ] T018 [P] Extend TaskForm component with new input fields: phase-2/frontend/src/components/TaskForm.tsx
-- [ ] T019 Update API client type definitions in phase-2/frontend/src/lib/api.ts with extended Task interface
-- [ ] T020 [P] Create useKeyboard hook for global shortcuts: phase-2/frontend/src/hooks/useKeyboard.ts
-- [ ] T021 [P] Create useNotifications hook for browser notifications: phase-2/frontend/src/hooks/useNotifications.ts
+- [ ] T017 [P] Extend TaskItem component to display new fields: phase-2/frontend/src/components/TaskItem.tsx (will do in US1)
+- [ ] T018 [P] Extend TaskForm component with new input fields: phase-2/frontend/src/components/TaskForm.tsx (will do in US1)
+- [X] T019 Update API client type definitions in phase-2/frontend/src/lib/api.ts with extended Task interface
+- [X] T020 [P] Create useKeyboard hook for global shortcuts: phase-2/frontend/src/hooks/useKeyboard.ts
+- [X] T021 [P] Create useNotifications hook for browser notifications: phase-2/frontend/src/hooks/useNotifications.ts
 
 **Acceptance**: All models defined, API types updated, foundation hooks created
 
