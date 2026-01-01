@@ -35,8 +35,8 @@ Based on plan.md, this is a **web application monorepo**:
 - [X] T004 Run database migration to add new tables and columns
 - [X] T005 Verify migration success: check tasks table columns, verify new tables exist (task_history, user_preferences, tags, notifications)
 - [X] T006 [P] Update requirements.txt with new dependencies: phase-2/backend/requirements.txt
-- [ ] T007 [P] Update package.json with new dependencies: phase-2/frontend/package.json
-- [ ] T008 [P] Add Tailwind custom colors for priorities (red, yellow, green) in phase-2/frontend/tailwind.config.js
+- [X] T007 [P] Update package.json with new dependencies: phase-2/frontend/package.json
+- [X] T008 [P] Add Tailwind custom colors for priorities (red, yellow, green) in phase-2/frontend/tailwind.config.js
 
 **Acceptance**: Database schema extended, all dependencies installed, migrations successful
 
@@ -55,9 +55,9 @@ Based on plan.md, this is a **web application monorepo**:
 - [X] T011 [P] Create UserPreferences model in phase-2/backend/models.py
 - [X] T012 [P] Create Tag model in phase-2/backend/models.py
 - [X] T013 [P] Create Notification model in phase-2/backend/models.py
-- [ ] T014 Update db.py to create new tables on startup: phase-2/backend/db.py
+- [X] T014 Update db.py to create new tables on startup: phase-2/backend/db.py
 - [X] T015 [P] Create enums for Priority and Theme in phase-2/backend/models.py
-- [ ] T016 [P] Add tsvector trigger function for search in migration script
+- [X] T016 [P] Add tsvector trigger function for search in migration script
 
 ### Frontend Foundation
 

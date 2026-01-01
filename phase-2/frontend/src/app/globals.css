@@ -15,6 +15,12 @@
   --fuchsia-primary: #d946ef;
   --purple-primary: #8B5CF6;
   --blue-secondary: #3B82F6;
+
+  /* Priority Colors (T008) */
+  --priority-high: #EF4444;      /* Red */
+  --priority-medium: #F59E0B;    /* Yellow/Amber */
+  --priority-low: #10B981;       /* Green */
+  --priority-none: #6B7280;      /* Gray */
 }
 
 /* Dark Mode Variables */
@@ -42,6 +48,12 @@
   --color-fuchsia-primary: var(--fuchsia-primary);
   --color-purple-primary: var(--purple-primary);
   --color-blue-secondary: var(--blue-secondary);
+
+  /* Priority Colors (T008) */
+  --color-priority-high: var(--priority-high);
+  --color-priority-medium: var(--priority-medium);
+  --color-priority-low: var(--priority-low);
+  --color-priority-none: var(--priority-none);
 
   --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);

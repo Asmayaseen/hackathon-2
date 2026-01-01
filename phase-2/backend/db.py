@@ -1,8 +1,8 @@
 """
 Database connection and session management.
 
-Task: 1.3
-Spec: specs/database/schema.md
+Task: 1.3, T014
+Spec: specs/database/schema.md, specs/1-phase2-advanced-features/data-model.md
 """
 from sqlmodel import create_engine, Session, SQLModel
 import os
@@ -24,7 +24,9 @@ engine = create_engine(
 
 
 def create_db_and_tables():
-    """Create all database tables."""
+    """Create all database tables (T014)."""
+    # Import all models to register them with SQLModel metadata
+    from models import User, Task, TaskHistory, UserPreferences, Tag, Notification
     SQLModel.metadata.create_all(engine)
 
 
