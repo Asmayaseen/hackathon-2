@@ -18,16 +18,28 @@ router = APIRouter(prefix="/api", tags=["tasks"])
 
 # Request/Response Models
 class TaskCreate(BaseModel):
-    """Request model for creating a task."""
+    """Request model for creating a task (T022)."""
     title: str = Field(min_length=1, max_length=200)
     description: Optional[str] = None
+    # Phase 2 Advanced Features
+    due_date: Optional[datetime] = None
+    priority: Optional[str] = Field(default="none")
+    tags: Optional[list[str]] = Field(default_factory=list)
+    recurrence_pattern: Optional[str] = None
+    reminder_offset: Optional[int] = None
 
 
 class TaskUpdate(BaseModel):
-    """Request model for updating a task."""
+    """Request model for updating a task (T024)."""
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
     completed: Optional[bool] = None
+    # Phase 2 Advanced Features
+    due_date: Optional[datetime] = None
+    priority: Optional[str] = None
+    tags: Optional[list[str]] = None
+    recurrence_pattern: Optional[str] = None
+    reminder_offset: Optional[int] = None
 
 
 class TaskResponse(BaseModel):
@@ -39,6 +51,14 @@ class TaskResponse(BaseModel):
     completed: bool
     created_at: datetime
     updated_at: datetime
+    # Phase 2 Advanced Features
+    due_date: Optional[datetime] = None
+    priority: str = "none"
+    tags: list[str] = Field(default_factory=list)
+    recurrence_pattern: Optional[str] = None
+    reminder_offset: Optional[int] = None
+    is_recurring: bool = False
+    parent_recurring_id: Optional[int] = None
 
 
 @router.get("/{user_id}/tasks")
@@ -131,14 +151,35 @@ async def create_task(
             detail="Cannot create tasks for other users"
         )
 
-    # Create new task
+    # Validate priority (T025)
+    if task_data.priority and task_data.priority not in ['high', 'medium', 'low', 'none']:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid priority. Must be one of: high, medium, low, none"
+        )
+
+    # Validate due_date (T026) - prevent past dates unless explicitly allowed
+    if task_data.due_date and task_data.due_date < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Due date cannot be in the past"
+        )
+
+    # Create new task (T022, T023)
     new_task = Task(
         user_id=user_id,
         title=task_data.title,
         description=task_data.description,
         completed=False,
         created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
+        updated_at=datetime.utcnow(),
+        # Phase 2 Advanced Features
+        due_date=task_data.due_date,
+        priority=task_data.priority or "none",
+        tags=task_data.tags or [],
+        recurrence_pattern=task_data.recurrence_pattern,
+        reminder_offset=task_data.reminder_offset,
+        is_recurring=bool(task_data.recurrence_pattern)
     )
 
     # Save to database
@@ -239,6 +280,35 @@ async def update_task(
         task.description = task_data.description
     if task_data.completed is not None:
         task.completed = task_data.completed
+
+    # Phase 2 Advanced Features (T024)
+    if task_data.priority is not None:
+        # Validate priority (T025)
+        if task_data.priority not in ['high', 'medium', 'low', 'none']:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid priority. Must be one of: high, medium, low, none"
+            )
+        task.priority = task_data.priority
+
+    if task_data.due_date is not None:
+        # Allow editing overdue tasks, but prevent setting new past dates (T026)
+        if task_data.due_date < datetime.utcnow() and task.due_date is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Due date cannot be in the past"
+            )
+        task.due_date = task_data.due_date
+
+    if task_data.tags is not None:
+        task.tags = task_data.tags
+
+    if task_data.recurrence_pattern is not None:
+        task.recurrence_pattern = task_data.recurrence_pattern
+        task.is_recurring = bool(task_data.recurrence_pattern)
+
+    if task_data.reminder_offset is not None:
+        task.reminder_offset = task_data.reminder_offset
 
     task.updated_at = datetime.utcnow()
 
