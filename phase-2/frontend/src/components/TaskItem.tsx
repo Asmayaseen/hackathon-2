@@ -2,12 +2,15 @@
 
 import { useState } from 'react';
 import { api, Task, TaskUpdate } from '../lib/api';
+import { PriorityBadge } from './PriorityBadge';
 
 interface TaskItemProps {
   task: Task;
   userId: string;
   onTaskUpdated: () => void;
   onTaskDeleted: () => void;
+  isSelected?: boolean;
+  onSelect?: (taskId: number) => void;
 }
 
 export default function TaskItem({
@@ -15,6 +18,8 @@ export default function TaskItem({
   userId,
   onTaskUpdated,
   onTaskDeleted,
+  isSelected,
+  onSelect,
 }: TaskItemProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
@@ -82,6 +87,14 @@ export default function TaskItem({
     });
   };
 
+  // Phase 2: Check if task is overdue (T033)
+  const isOverdue = () => {
+    if (!task.due_date) return false;
+    const due = new Date(task.due_date);
+    const now = new Date();
+    return due < now && !task.completed;
+  };
+
   if (isEditing) {
     return (
       <div className="relative bg-card/80 backdrop-blur-sm p-4 rounded-2xl border-2 border-fuchsia-500/50">
@@ -124,12 +137,26 @@ export default function TaskItem({
   return (
     <div
       className={`relative bg-card/80 backdrop-blur-sm p-4 rounded-2xl transition-all border-2 ${
-        task.completed
+        isSelected
+          ? 'border-cyan-500 bg-cyan-500/10 shadow-[0_0_20px_rgba(0,217,255,0.2)]'
+          : task.completed
           ? 'border-green-500/30 opacity-70'
+          : isOverdue()
+          ? 'border-red-500/40 bg-red-500/5'
           : 'border-cyan-500/20 hover:border-cyan-400/50 hover:shadow-[0_0_20px_rgba(0,217,255,0.1)]'
       }`}
     >
       <div className="flex items-start gap-3">
+        {/* Bulk Select Checkbox (US6) */}
+        <div className="mt-1 flex items-center">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onSelect?.(task.id)}
+            className="w-4 h-4 rounded border-cyan-500/50 text-cyan-500 focus:ring-cyan-500/30 bg-background/50 cursor-pointer"
+          />
+        </div>
+
         {/* Checkbox */}
         <button
           onClick={handleToggleComplete}
@@ -150,13 +177,19 @@ export default function TaskItem({
 
         {/* Content */}
         <div className="flex-1 min-w-0">
-          <h3
-            className={`text-lg font-medium ${
-              task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
-            }`}
-          >
-            {task.title}
-          </h3>
+          {/* Phase 2: Title with priority and due date info (T031-T033) */}
+          <div className="flex items-start justify-between gap-2">
+            <h3
+              className={`text-lg font-medium ${
+                task.completed ? 'line-through text-muted-foreground' : 'text-foreground'
+              }`}
+            >
+              {task.title}
+            </h3>
+
+            {/* Phase 2: Priority badge (T031) */}
+            {task.priority && <PriorityBadge priority={task.priority} />}
+          </div>
 
           {task.description && (
             <p
@@ -166,6 +199,18 @@ export default function TaskItem({
             >
               {task.description}
             </p>
+          )}
+
+          {/* Phase 2: Due date with overdue warning (T032-T033) */}
+          {task.due_date && (
+            <div className={`mt-2 text-xs flex items-center gap-1 ${
+              isOverdue() ? 'text-red-400 font-medium' : 'text-muted-foreground'
+            }`}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {isOverdue() ? 'Overdue: ' : 'Due: '}{formatDate(task.due_date)}
+            </div>
           )}
 
           {/* Date info toggle */}

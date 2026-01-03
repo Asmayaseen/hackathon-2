@@ -7,7 +7,7 @@ Spec: specs/api/rest-endpoints.md
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session, select
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from pydantic import BaseModel, Field
 from models import Task
 from db import get_session
@@ -65,15 +65,23 @@ class TaskResponse(BaseModel):
 async def get_tasks(
     user_id: str,
     status_filter: Optional[str] = Query(None, alias="status"),
+    priority_filter: Optional[str] = Query(None, alias="priority"),
+    due_filter: Optional[str] = Query(None, alias="due"),
+    sort_by: Optional[str] = Query("created_at", alias="sort"),
+    sort_order: Optional[str] = Query("desc", alias="order"),
     session: Session = Depends(get_session),
     authenticated_user_id: str = Depends(verify_token)
 ):
     """
-    Get all tasks for a user with optional status filtering.
+    Get all tasks for a user with optional filtering and sorting (US2).
 
     Args:
         user_id: User ID from URL path
-        status_filter: Filter tasks by status (all, pending, completed)
+        status_filter: Filter by status (all, pending, completed)
+        priority_filter: Filter by priority (all, high, medium, low, none)
+        due_filter: Filter by due date (all, today, overdue, week)
+        sort_by: Sort by field (created_at, due_date, priority, title)
+        sort_order: Sort direction (asc, desc)
         session: Database session
         authenticated_user_id: User ID from JWT token
 
@@ -100,8 +108,48 @@ async def get_tasks(
         query = query.where(Task.completed == True)
     # 'all' or None - no filter needed
 
-    # Sort by created_at descending (newest first)
-    query = query.order_by(Task.created_at.desc())
+    # Apply priority filter (US2)
+    if priority_filter and priority_filter != "all":
+        query = query.where(Task.priority == priority_filter)
+
+    # Apply due date filter (US2)
+    now = datetime.utcnow()
+    if due_filter == "today":
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start.replace(hour=23, minute=59, second=59)
+        query = query.where(Task.due_date >= today_start, Task.due_date <= today_end)
+    elif due_filter == "overdue":
+        query = query.where(Task.due_date < now, Task.completed == False)
+    elif due_filter == "week":
+        week_end = now + timedelta(days=7)
+        query = query.where(Task.due_date >= now, Task.due_date <= week_end)
+
+    # Apply sorting (US2)
+    sort_field = None
+    if sort_by == "created_at":
+        sort_field = Task.created_at
+    elif sort_by == "due_date":
+        sort_field = Task.due_date
+    elif sort_by == "priority":
+        # Priority order: high > medium > low > none
+        priority_order = {
+            "high": 0,
+            "medium": 1,
+            "low": 2,
+            "none": 3
+        }
+        # For now, sort by string (will refine if needed)
+        sort_field = Task.priority
+    elif sort_by == "title":
+        sort_field = Task.title
+    else:
+        sort_field = Task.created_at  # default
+
+    if sort_field:
+        if sort_order == "asc":
+            query = query.order_by(sort_field.asc())
+        else:
+            query = query.order_by(sort_field.desc())
 
     # Execute query
     tasks = session.exec(query).all()

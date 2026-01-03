@@ -50,6 +50,22 @@ def root():
 # Import and include routers
 from routes.tasks import router as tasks_router
 from routes.auth import router as auth_router
+from routes.recurrence import router as recurrence_router
+from routes.search import router as search_router
+from routes.bulk import router as bulk_router
+from routes.history import router as history_router
+from routes.notifications import router as notifications_router
+from routes.preferences import router as preferences_router
+from routes.stats import router as stats_router
+from routes.export_import import router as export_import_router
 
 app.include_router(tasks_router)
 app.include_router(auth_router)
+app.include_router(recurrence_router)
+app.include_router(search_router)
+app.include_router(bulk_router)
+app.include_router(history_router)
+app.include_router(notifications_router)
+app.include_router(preferences_router)
+app.include_router(stats_router)
+app.include_router(export_import_router)

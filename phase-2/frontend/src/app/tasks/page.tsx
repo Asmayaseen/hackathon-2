@@ -16,6 +16,8 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [stats, setStats] = useState({ total: 0, pending: 0, completed: 0 });
+  const [showDataOps, setShowDataOps] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
 
   const fetchStats = useCallback(async (userId: string) => {
     try {
@@ -64,6 +66,38 @@ export default function TasksPage() {
     setRefreshTrigger((prev) => prev + 1);
   };
 
+  const handleExportJson = async () => {
+    if (!user) return;
+    try {
+      await api.exportTasksJson(user.id);
+    } catch (err) {
+      console.error('Export failed:', err);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    if (!user) return;
+    try {
+      await api.exportTasksCsv(user.id);
+    } catch (err) {
+      console.error('Export failed:', err);
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user || !e.target.files?.[0]) return;
+    setImportLoading(true);
+    try {
+      await api.importTasksJson(user.id, e.target.files[0]);
+      setRefreshTrigger(prev => prev + 1);
+      setShowDataOps(false);
+    } catch (err) {
+      console.error('Import failed:', err);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -110,6 +144,15 @@ export default function TasksPage() {
           </Link>
 
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setShowDataOps(!showDataOps)}
+              className="p-2 rounded-xl bg-card/50 border border-cyan-500/20 text-cyan-400 hover:border-cyan-400 transition-all"
+              title="Data Operations"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+            </button>
             <ThemeToggle />
             <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-card/50 rounded-xl border border-cyan-500/20">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
@@ -126,6 +169,62 @@ export default function TasksPage() {
           </div>
         </div>
       </header>
+
+      {/* Data Operations Backdrop/Panel */}
+      {showDataOps && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-card border-2 border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowDataOps(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h3 className="text-xl font-bold text-cyan-400 mb-6 uppercase tracking-wider">Data Protocols</h3>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-background/50 rounded-xl border border-border">
+                <p className="text-sm font-medium mb-3">Export Mission Data</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleExportJson}
+                    className="flex-1 py-2 bg-cyan-500/10 border border-cyan-500/50 text-cyan-400 rounded-lg hover:bg-cyan-500/20 transition-all text-sm font-bold"
+                  >
+                    JSON
+                  </button>
+                  <button
+                    onClick={handleExportCsv}
+                    className="flex-1 py-2 bg-fuchsia-500/10 border border-fuchsia-500/50 text-fuchsia-400 rounded-lg hover:bg-fuchsia-500/20 transition-all text-sm font-bold"
+                  >
+                    CSV
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-4 bg-background/50 rounded-xl border border-border">
+                <p className="text-sm font-medium mb-3">Import Neural Stream</p>
+                <label className={`
+                  flex items-center justify-center w-full py-3 border-2 border-dashed border-cyan-500/30 rounded-lg cursor-pointer hover:border-cyan-500/50 transition-all
+                  ${importLoading ? 'opacity-50 pointer-events-none' : ''}
+                `}>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider font-bold">
+                    {importLoading ? 'Processing...' : 'Upload JSON File'}
+                  </span>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImport}
+                    className="hidden"
+                    disabled={importLoading}
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 relative z-10">
