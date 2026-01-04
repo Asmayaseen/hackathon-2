@@ -375,11 +375,11 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
       {!loading && !error && tasks.length === 0 && (
         <div className="relative bg-card/80 backdrop-blur-sm p-8 rounded-2xl text-center border-2 border-cyan-500/20">
           <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-fuchsia-500/20 flex items-center justify-center">
-            {filter === 'completed' ? (
+            {statusFilter === 'completed' ? (
               <svg className="w-10 h-10 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-            ) : filter === 'pending' ? (
+            ) : statusFilter === 'pending' ? (
               <svg className="w-10 h-10 text-fuchsia-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
@@ -390,16 +390,16 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
             )}
           </div>
           <h3 className="text-xl font-bold mb-2 text-foreground">
-            {filter === 'completed'
+            {statusFilter === 'completed'
               ? 'No completed missions'
-              : filter === 'pending'
+              : statusFilter === 'pending'
               ? 'All missions complete!'
               : 'No active missions'}
           </h3>
           <p className="text-muted-foreground">
-            {filter === 'all'
+            {statusFilter === 'all'
               ? 'Initialize your first task above'
-              : filter === 'pending'
+              : statusFilter === 'pending'
               ? 'Outstanding work, agent!'
               : 'Complete some tasks to see them here'}
           </p>

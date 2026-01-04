@@ -94,6 +94,20 @@ async def update_user_preferences(
 
     # Update fields
     update_data = data.model_dump(exclude_unset=True)
+    print(f"📝 Updating preferences for {user_id}:")
+    print(f"   Data received: {update_data}")
+
+    # Validate language constraint
+    if 'language' in update_data:
+        allowed_languages = ['en', 'ur']
+        if update_data['language'] not in allowed_languages:
+            error_msg = f"Invalid language '{update_data['language']}'. Allowed: {', '.join(allowed_languages)}"
+            print(f"❌ {error_msg}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=error_msg
+            )
+
     for key, value in update_data.items():
         setattr(prefs, key, value)
 

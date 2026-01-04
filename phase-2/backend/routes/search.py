@@ -48,27 +48,37 @@ async def search_tasks(
 
     # Build search query
     search_term = f"%{q}%"
-    query = select(Task).where(
-        Task.user_id == user_id,
-        or_(
-            Task.title.icontains(q),
-            Task.description.icontains(q),
-            Task.tags.contains(q)  # SQLModel/SQLAlchemy contains for JSON list
-        )
-    )
+
+    # Fetch all user tasks first, then filter in Python for JSON array search
+    all_tasks_query = select(Task).where(Task.user_id == user_id)
+    all_tasks = session.exec(all_tasks_query).all()
+
+    # Filter tasks that match search in title, description, or tags
+    filtered_tasks = []
+    for task in all_tasks:
+        # Check title
+        if task.title and q.lower() in task.title.lower():
+            filtered_tasks.append(task)
+            continue
+        # Check description
+        if task.description and q.lower() in task.description.lower():
+            filtered_tasks.append(task)
+            continue
+        # Check tags
+        if task.tags and any(q.lower() in tag.lower() for tag in task.tags):
+            filtered_tasks.append(task)
+            continue
 
     # Apply status filter
     if status_filter == "pending":
-        query = query.where(Task.completed == False)
+        tasks = [t for t in filtered_tasks if not t.completed]
     elif status_filter == "completed":
-        query = query.where(Task.completed == True)
-    # 'all' or None - no filter needed
+        tasks = [t for t in filtered_tasks if t.completed]
+    else:
+        tasks = filtered_tasks
 
-    # Sort by relevance (title match first)
-    query = query.order_by(Task.created_at.desc())
-
-    # Execute query
-    tasks = session.exec(query).all()
+    # Sort by most recent first
+    tasks = sorted(tasks, key=lambda t: t.created_at, reverse=True)
 
     # Calculate counts
     total = len(tasks)

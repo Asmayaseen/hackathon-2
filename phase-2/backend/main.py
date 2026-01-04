@@ -7,10 +7,12 @@ Spec: specs/overview.md
 from dotenv import load_dotenv
 load_dotenv()  # Load .env file first
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from db import create_db_and_tables
 import os
+import traceback
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -29,6 +31,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Global exception handler to ensure CORS headers on errors
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Catch all exceptions and return with proper CORS headers."""
+    print(f"❌ Global Exception: {exc}")
+    traceback.print_exc()
+
+    return JSONResponse(
+        status_code=500,
+        content={"detail": str(exc)},
+        headers={
+            "Access-Control-Allow-Origin": request.headers.get("origin", "http://localhost:3000"),
+            "Access-Control-Allow-Credentials": "true",
+        }
+    )
 
 
 @app.on_event("startup")

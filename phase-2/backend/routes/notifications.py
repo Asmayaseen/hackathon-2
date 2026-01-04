@@ -88,3 +88,32 @@ async def mark_notification_as_read(
     session.refresh(notification)
 
     return notification
+
+
+@router.patch("/{user_id}/notifications/mark-all-read")
+async def mark_all_notifications_as_read(
+    user_id: str,
+    session: Session = Depends(get_session),
+    authenticated_user_id: str = Depends(verify_token)
+):
+    """Mark all notifications as read/sent for a user."""
+    if user_id != authenticated_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden"
+        )
+
+    query = select(Notification).where(
+        Notification.user_id == user_id,
+        Notification.sent == False
+    )
+    notifications = session.exec(query).all()
+
+    for notification in notifications:
+        notification.sent = True
+        notification.sent_at = datetime.utcnow()
+        session.add(notification)
+
+    session.commit()
+
+    return {"message": f"Marked {len(notifications)} notifications as read", "count": len(notifications)}

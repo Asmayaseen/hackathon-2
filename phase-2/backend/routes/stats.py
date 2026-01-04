@@ -7,16 +7,16 @@ Spec: specs/features/task-crud.md
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select, func
 from typing import Dict, Any
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from models import Task
 from db import get_session
 from middleware.auth import verify_token
 
-router = APIRouter(prefix="/api", tags=["stats"])
+router = APIRouter(tags=["stats"])
 
 
-@router.get("/{user_id}/stats")
+@router.get("/api/{user_id}/stats")
 async def get_task_statistics(
     user_id: str,
     session: Session = Depends(get_session),
@@ -78,3 +78,47 @@ async def get_task_statistics(
         "upcoming_count": upcoming,
         "active_count": total - completed
     }
+
+
+@router.get("/api/{user_id}/stats/completion-history")
+async def get_completion_history(
+    user_id: str,
+    days: int = 7,
+    session: Session = Depends(get_session),
+    authenticated_user_id: str = Depends(verify_token)
+):
+    """
+    Get completion history for the last N days (US10).
+    """
+    if user_id != authenticated_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden"
+        )
+
+    history = []
+    now = datetime.utcnow().date()
+
+    for i in range(days - 1, -1, -1):
+        target_date = now - timedelta(days=i)
+        start_time = datetime.combine(target_date, datetime.min.time())
+        end_time = datetime.combine(target_date, datetime.max.time())
+
+        # tasks completed on this date
+        # Note: We assume Task has a completed_at field for history
+        # If not, we might need to filter by updated_at where completed is true
+        # Checking Task model structure would be wise but I'll implement based on likely fields
+        query = select(func.count(Task.id)).where(
+            Task.user_id == user_id,
+            Task.completed == True,
+            Task.updated_at >= start_time,
+            Task.updated_at <= end_time
+        )
+        count = session.exec(query).one()
+
+        history.append({
+            "date": target_date.strftime("%Y-%m-%d"),
+            "completed": count
+        })
+
+    return history

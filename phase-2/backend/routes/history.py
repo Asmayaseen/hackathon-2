@@ -13,10 +13,10 @@ from models import TaskHistory
 from db import get_session
 from middleware.auth import verify_token
 
-router = APIRouter(prefix="/api", tags=["history"])
+router = APIRouter(tags=["history"])
 
 
-@router.get("/{user_id}/history")
+@router.get("/api/{user_id}/history")
 async def get_task_history(
     user_id: str,
     task_id: Optional[int] = Query(None),

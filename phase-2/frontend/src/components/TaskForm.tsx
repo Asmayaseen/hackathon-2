@@ -38,7 +38,7 @@ export default function TaskForm({ userId, onTaskAdded }: TaskFormProps) {
         title: title.trim(),
         description: description.trim() || undefined,
         // Phase 2 Advanced Features (T029-T030, US4)
-        priority: priority !== 'none' ? priority : undefined,
+        priority: priority,  // Send 'none' as is, backend handles it
         due_date: dueDate?.toISOString(),
         recurrence_pattern: recurrencePattern || undefined,
         tags: [],

@@ -7,7 +7,7 @@ Spec: specs/api/rest-endpoints.md
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session, select
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel, Field
 from models import Task
 from db import get_session
@@ -113,7 +113,7 @@ async def get_tasks(
         query = query.where(Task.priority == priority_filter)
 
     # Apply due date filter (US2)
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     if due_filter == "today":
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today_end = today_start.replace(hour=23, minute=59, second=59)
@@ -207,11 +207,14 @@ async def create_task(
         )
 
     # Validate due_date (T026) - prevent past dates unless explicitly allowed
-    if task_data.due_date and task_data.due_date < datetime.utcnow():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Due date cannot be in the past"
-        )
+    if task_data.due_date:
+        # Make both datetimes timezone-aware for comparison
+        now_utc = datetime.now(timezone.utc)
+        if task_data.due_date < now_utc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Due date cannot be in the past"
+            )
 
     # Create new task (T022, T023)
     new_task = Task(
@@ -219,8 +222,8 @@ async def create_task(
         title=task_data.title,
         description=task_data.description,
         completed=False,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow(),
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         # Phase 2 Advanced Features
         due_date=task_data.due_date,
         priority=task_data.priority or "none",
@@ -341,7 +344,8 @@ async def update_task(
 
     if task_data.due_date is not None:
         # Allow editing overdue tasks, but prevent setting new past dates (T026)
-        if task_data.due_date < datetime.utcnow() and task.due_date is None:
+        now_utc = datetime.now(timezone.utc)
+        if task_data.due_date < now_utc and task.due_date is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Due date cannot be in the past"
@@ -358,7 +362,7 @@ async def update_task(
     if task_data.reminder_offset is not None:
         task.reminder_offset = task_data.reminder_offset
 
-    task.updated_at = datetime.utcnow()
+    task.updated_at = datetime.now(timezone.utc)
 
     # Save changes
     session.add(task)
@@ -455,7 +459,7 @@ async def toggle_task_completion(
 
     # Toggle completion status
     task.completed = not task.completed
-    task.updated_at = datetime.utcnow()
+    task.updated_at = datetime.now(timezone.utc)
 
     # Save changes
     session.add(task)

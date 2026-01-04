@@ -7,7 +7,7 @@ import TaskForm from '../../components/TaskForm';
 import TaskList from '../../components/TaskList';
 import StatsCard from '../../components/StatsCard';
 import ProgressBar from '../../components/ProgressBar';
-import ThemeToggle from '../../components/ThemeToggle';
+import Navbar from '../../components/layout/Navbar';
 import { api, TasksResponse } from '../../lib/api';
 
 export default function TasksPage() {
@@ -127,48 +127,7 @@ export default function TasksPage() {
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-fuchsia-500/10 rounded-full filter blur-[150px]" />
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b-2 border-cyan-500/20">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center space-x-3 group">
-            <div className="relative w-10 h-10">
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-fuchsia-500 rounded-xl blur-md opacity-60 group-hover:opacity-100 transition-opacity" />
-              <div className="relative w-full h-full bg-gradient-to-br from-cyan-500 to-fuchsia-500 rounded-xl flex items-center justify-center border-2 border-cyan-400/50">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-400 bg-clip-text text-transparent tracking-wider">
-              NEURAL TASKS
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setShowDataOps(!showDataOps)}
-              className="p-2 rounded-xl bg-card/50 border border-cyan-500/20 text-cyan-400 hover:border-cyan-400 transition-all"
-              title="Data Operations"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-              </svg>
-            </button>
-            <ThemeToggle />
-            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-card/50 rounded-xl border border-cyan-500/20">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              <span className="text-sm text-muted-foreground">
-                {user?.name || user?.email}
-              </span>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 rounded-xl bg-card/50 border-2 border-red-500/30 text-red-400 hover:border-red-400 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)] transition-all uppercase text-sm font-medium tracking-wide"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Data Operations Backdrop/Panel */}
       {showDataOps && (
@@ -230,12 +189,30 @@ export default function TasksPage() {
       <main className="container mx-auto px-4 py-8 relative z-10">
         <div className="max-w-4xl mx-auto">
           {/* Dashboard Header */}
-          <div className="mb-8 text-center sm:text-left">
-            <h2 className="text-4xl font-bold mb-2">
-              <span className="text-foreground">Mission</span>{' '}
-              <span className="bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">Control</span>
-            </h2>
-            <p className="text-muted-foreground">Neural task management interface active</p>
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="text-center sm:text-left">
+              <h2 className="text-4xl font-bold mb-2">
+                <span className="text-foreground">Mission</span>{' '}
+                <span className="bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">Control</span>
+              </h2>
+              <p className="text-muted-foreground">Neural task management interface active</p>
+            </div>
+
+            {/* Export/Import Button */}
+            <button
+              onClick={() => setShowDataOps(true)}
+              className="group relative px-6 py-3 bg-gradient-to-r from-cyan-500/10 to-fuchsia-500/10 border-2 border-cyan-500/30 rounded-xl hover:border-cyan-400 transition-all duration-300 overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 to-fuchsia-500/0 group-hover:from-cyan-500/20 group-hover:to-fuchsia-500/20 transition-all duration-300" />
+              <div className="relative flex items-center gap-2">
+                <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span className="font-bold text-sm uppercase tracking-wider text-cyan-400 group-hover:text-cyan-300 transition-colors">
+                  Data Ops
+                </span>
+              </div>
+            </button>
           </div>
 
           {/* Stats Section */}
