@@ -7,7 +7,7 @@ Spec: specs/api/rest-endpoints.md
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlmodel import Session, select
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel, Field
 from models import Task
 from db import get_session
@@ -18,16 +18,28 @@ router = APIRouter(prefix="/api", tags=["tasks"])
 
 # Request/Response Models
 class TaskCreate(BaseModel):
-    """Request model for creating a task."""
+    """Request model for creating a task (T022)."""
     title: str = Field(min_length=1, max_length=200)
     description: Optional[str] = None
+    # Phase 2 Advanced Features
+    due_date: Optional[datetime] = None
+    priority: Optional[str] = Field(default="none")
+    tags: Optional[list[str]] = Field(default_factory=list)
+    recurrence_pattern: Optional[str] = None
+    reminder_offset: Optional[int] = None
 
 
 class TaskUpdate(BaseModel):
-    """Request model for updating a task."""
+    """Request model for updating a task (T024)."""
     title: Optional[str] = Field(None, min_length=1, max_length=200)
     description: Optional[str] = None
     completed: Optional[bool] = None
+    # Phase 2 Advanced Features
+    due_date: Optional[datetime] = None
+    priority: Optional[str] = None
+    tags: Optional[list[str]] = None
+    recurrence_pattern: Optional[str] = None
+    reminder_offset: Optional[int] = None
 
 
 class TaskResponse(BaseModel):
@@ -39,21 +51,37 @@ class TaskResponse(BaseModel):
     completed: bool
     created_at: datetime
     updated_at: datetime
+    # Phase 2 Advanced Features
+    due_date: Optional[datetime] = None
+    priority: str = "none"
+    tags: list[str] = Field(default_factory=list)
+    recurrence_pattern: Optional[str] = None
+    reminder_offset: Optional[int] = None
+    is_recurring: bool = False
+    parent_recurring_id: Optional[int] = None
 
 
 @router.get("/{user_id}/tasks")
 async def get_tasks(
     user_id: str,
     status_filter: Optional[str] = Query(None, alias="status"),
+    priority_filter: Optional[str] = Query(None, alias="priority"),
+    due_filter: Optional[str] = Query(None, alias="due"),
+    sort_by: Optional[str] = Query("created_at", alias="sort"),
+    sort_order: Optional[str] = Query("desc", alias="order"),
     session: Session = Depends(get_session),
     authenticated_user_id: str = Depends(verify_token)
 ):
     """
-    Get all tasks for a user with optional status filtering.
+    Get all tasks for a user with optional filtering and sorting (US2).
 
     Args:
         user_id: User ID from URL path
-        status_filter: Filter tasks by status (all, pending, completed)
+        status_filter: Filter by status (all, pending, completed)
+        priority_filter: Filter by priority (all, high, medium, low, none)
+        due_filter: Filter by due date (all, today, overdue, week)
+        sort_by: Sort by field (created_at, due_date, priority, title)
+        sort_order: Sort direction (asc, desc)
         session: Database session
         authenticated_user_id: User ID from JWT token
 
@@ -80,8 +108,48 @@ async def get_tasks(
         query = query.where(Task.completed == True)
     # 'all' or None - no filter needed
 
-    # Sort by created_at descending (newest first)
-    query = query.order_by(Task.created_at.desc())
+    # Apply priority filter (US2)
+    if priority_filter and priority_filter != "all":
+        query = query.where(Task.priority == priority_filter)
+
+    # Apply due date filter (US2)
+    now = datetime.now(timezone.utc)
+    if due_filter == "today":
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start.replace(hour=23, minute=59, second=59)
+        query = query.where(Task.due_date >= today_start, Task.due_date <= today_end)
+    elif due_filter == "overdue":
+        query = query.where(Task.due_date < now, Task.completed == False)
+    elif due_filter == "week":
+        week_end = now + timedelta(days=7)
+        query = query.where(Task.due_date >= now, Task.due_date <= week_end)
+
+    # Apply sorting (US2)
+    sort_field = None
+    if sort_by == "created_at":
+        sort_field = Task.created_at
+    elif sort_by == "due_date":
+        sort_field = Task.due_date
+    elif sort_by == "priority":
+        # Priority order: high > medium > low > none
+        priority_order = {
+            "high": 0,
+            "medium": 1,
+            "low": 2,
+            "none": 3
+        }
+        # For now, sort by string (will refine if needed)
+        sort_field = Task.priority
+    elif sort_by == "title":
+        sort_field = Task.title
+    else:
+        sort_field = Task.created_at  # default
+
+    if sort_field:
+        if sort_order == "asc":
+            query = query.order_by(sort_field.asc())
+        else:
+            query = query.order_by(sort_field.desc())
 
     # Execute query
     tasks = session.exec(query).all()
@@ -131,14 +199,38 @@ async def create_task(
             detail="Cannot create tasks for other users"
         )
 
-    # Create new task
+    # Validate priority (T025)
+    if task_data.priority and task_data.priority not in ['high', 'medium', 'low', 'none']:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid priority. Must be one of: high, medium, low, none"
+        )
+
+    # Validate due_date (T026) - prevent past dates unless explicitly allowed
+    if task_data.due_date:
+        # Make both datetimes timezone-aware for comparison
+        now_utc = datetime.now(timezone.utc)
+        if task_data.due_date < now_utc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Due date cannot be in the past"
+            )
+
+    # Create new task (T022, T023)
     new_task = Task(
         user_id=user_id,
         title=task_data.title,
         description=task_data.description,
         completed=False,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+        # Phase 2 Advanced Features
+        due_date=task_data.due_date,
+        priority=task_data.priority or "none",
+        tags=task_data.tags or [],
+        recurrence_pattern=task_data.recurrence_pattern,
+        reminder_offset=task_data.reminder_offset,
+        is_recurring=bool(task_data.recurrence_pattern)
     )
 
     # Save to database
@@ -240,7 +332,37 @@ async def update_task(
     if task_data.completed is not None:
         task.completed = task_data.completed
 
-    task.updated_at = datetime.utcnow()
+    # Phase 2 Advanced Features (T024)
+    if task_data.priority is not None:
+        # Validate priority (T025)
+        if task_data.priority not in ['high', 'medium', 'low', 'none']:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid priority. Must be one of: high, medium, low, none"
+            )
+        task.priority = task_data.priority
+
+    if task_data.due_date is not None:
+        # Allow editing overdue tasks, but prevent setting new past dates (T026)
+        now_utc = datetime.now(timezone.utc)
+        if task_data.due_date < now_utc and task.due_date is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Due date cannot be in the past"
+            )
+        task.due_date = task_data.due_date
+
+    if task_data.tags is not None:
+        task.tags = task_data.tags
+
+    if task_data.recurrence_pattern is not None:
+        task.recurrence_pattern = task_data.recurrence_pattern
+        task.is_recurring = bool(task_data.recurrence_pattern)
+
+    if task_data.reminder_offset is not None:
+        task.reminder_offset = task_data.reminder_offset
+
+    task.updated_at = datetime.now(timezone.utc)
 
     # Save changes
     session.add(task)
@@ -337,7 +459,7 @@ async def toggle_task_completion(
 
     # Toggle completion status
     task.completed = not task.completed
-    task.updated_at = datetime.utcnow()
+    task.updated_at = datetime.now(timezone.utc)
 
     # Save changes
     session.add(task)

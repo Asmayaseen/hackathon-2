@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { api, TaskCreate } from '../lib/api';
+import { DatePicker } from './DatePicker';
+import { PriorityBadge } from './PriorityBadge';
 
 interface TaskFormProps {
   userId: string;
@@ -14,6 +16,11 @@ export default function TaskForm({ userId, onTaskAdded }: TaskFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showDescription, setShowDescription] = useState(false);
+  // Phase 2 Advanced Features (T029-T030)
+  const [priority, setPriority] = useState<'high' | 'medium' | 'low' | 'none'>('none');
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
+  const [recurrencePattern, setRecurrencePattern] = useState<string>('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,13 +37,22 @@ export default function TaskForm({ userId, onTaskAdded }: TaskFormProps) {
       const taskData: TaskCreate = {
         title: title.trim(),
         description: description.trim() || undefined,
+        // Phase 2 Advanced Features (T029-T030, US4)
+        priority: priority,  // Send 'none' as is, backend handles it
+        due_date: dueDate?.toISOString(),
+        recurrence_pattern: recurrencePattern || undefined,
+        tags: [],
       };
 
       await api.createTask(userId, taskData);
 
       setTitle('');
       setDescription('');
+      setPriority('none');
+      setDueDate(undefined);
+      setRecurrencePattern('');
       setShowDescription(false);
+      setShowAdvanced(false);
       onTaskAdded();
     } catch (err: any) {
       const message = err.response?.data?.detail || 'Failed to create task';
@@ -104,6 +120,75 @@ export default function TaskForm({ userId, onTaskAdded }: TaskFormProps) {
             disabled={loading}
             maxLength={1000}
           />
+        </div>
+      )}
+
+      {/* Phase 2: Priority & Due Date (T029-T030) */}
+      <div className="mt-3 flex gap-3">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className={`px-4 py-2 rounded-lg border-2 transition-all text-sm ${
+            showAdvanced
+              ? 'bg-purple-500/20 border-purple-500/50 text-purple-400'
+              : 'bg-background/50 border-border text-muted-foreground hover:text-purple-400 hover:border-purple-400'
+          }`}
+        >
+          ⚙️ Advanced Options
+        </button>
+        {priority !== 'none' && <PriorityBadge priority={priority} />}
+      </div>
+
+      {showAdvanced && (
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-background/30 border-2 border-purple-500/20">
+          {/* Priority Selector (T029) */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Priority
+            </label>
+            <select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as any)}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-purple-primary/50 transition-all"
+            >
+              <option value="none">None</option>
+              <option value="high">🔴 High</option>
+              <option value="medium">🟡 Medium</option>
+              <option value="low">🟢 Low</option>
+            </select>
+          </div>
+
+          {/* Date Picker (T030) */}
+          <div>
+            <DatePicker
+              value={dueDate}
+              onChange={setDueDate}
+              minDate={new Date()}
+              label="Due Date"
+            />
+          </div>
+
+          {/* Recurrence (US4) */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Recurrence (Daily, Weekly, Monthly)
+            </label>
+            <select
+              value={recurrencePattern}
+              onChange={(e) => setRecurrencePattern(e.target.value)}
+              className="w-full px-3 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-purple-primary/50 transition-all"
+            >
+              <option value="">No Recurrence</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+            {recurrencePattern && (
+              <p className="mt-1 text-xs text-purple-400">
+                A new task will be created automatically when this one is completed.
+              </p>
+            )}
+          </div>
         </div>
       )}
 

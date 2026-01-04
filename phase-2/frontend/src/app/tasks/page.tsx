@@ -7,7 +7,7 @@ import TaskForm from '../../components/TaskForm';
 import TaskList from '../../components/TaskList';
 import StatsCard from '../../components/StatsCard';
 import ProgressBar from '../../components/ProgressBar';
-import ThemeToggle from '../../components/ThemeToggle';
+import Navbar from '../../components/layout/Navbar';
 import { api, TasksResponse } from '../../lib/api';
 
 export default function TasksPage() {
@@ -16,6 +16,8 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [stats, setStats] = useState({ total: 0, pending: 0, completed: 0 });
+  const [showDataOps, setShowDataOps] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
 
   const fetchStats = useCallback(async (userId: string) => {
     try {
@@ -64,6 +66,38 @@ export default function TasksPage() {
     setRefreshTrigger((prev) => prev + 1);
   };
 
+  const handleExportJson = async () => {
+    if (!user) return;
+    try {
+      await api.exportTasksJson(user.id);
+    } catch (err) {
+      console.error('Export failed:', err);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    if (!user) return;
+    try {
+      await api.exportTasksCsv(user.id);
+    } catch (err) {
+      console.error('Export failed:', err);
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!user || !e.target.files?.[0]) return;
+    setImportLoading(true);
+    try {
+      await api.importTasksJson(user.id, e.target.files[0]);
+      setRefreshTrigger(prev => prev + 1);
+      setShowDataOps(false);
+    } catch (err) {
+      console.error('Import failed:', err);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -93,50 +127,92 @@ export default function TasksPage() {
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-fuchsia-500/10 rounded-full filter blur-[150px]" />
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-xl border-b-2 border-cyan-500/20">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center space-x-3 group">
-            <div className="relative w-10 h-10">
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-fuchsia-500 rounded-xl blur-md opacity-60 group-hover:opacity-100 transition-opacity" />
-              <div className="relative w-full h-full bg-gradient-to-br from-cyan-500 to-fuchsia-500 rounded-xl flex items-center justify-center border-2 border-cyan-400/50">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+      <Navbar />
+
+      {/* Data Operations Backdrop/Panel */}
+      {showDataOps && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-card border-2 border-cyan-500/30 rounded-2xl p-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowDataOps(false)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            <h3 className="text-xl font-bold text-cyan-400 mb-6 uppercase tracking-wider">Data Protocols</h3>
+
+            <div className="space-y-4">
+              <div className="p-4 bg-background/50 rounded-xl border border-border">
+                <p className="text-sm font-medium mb-3">Export Mission Data</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleExportJson}
+                    className="flex-1 py-2 bg-cyan-500/10 border border-cyan-500/50 text-cyan-400 rounded-lg hover:bg-cyan-500/20 transition-all text-sm font-bold"
+                  >
+                    JSON
+                  </button>
+                  <button
+                    onClick={handleExportCsv}
+                    className="flex-1 py-2 bg-fuchsia-500/10 border border-fuchsia-500/50 text-fuchsia-400 rounded-lg hover:bg-fuchsia-500/20 transition-all text-sm font-bold"
+                  >
+                    CSV
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-4 bg-background/50 rounded-xl border border-border">
+                <p className="text-sm font-medium mb-3">Import Neural Stream</p>
+                <label className={`
+                  flex items-center justify-center w-full py-3 border-2 border-dashed border-cyan-500/30 rounded-lg cursor-pointer hover:border-cyan-500/50 transition-all
+                  ${importLoading ? 'opacity-50 pointer-events-none' : ''}
+                `}>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wider font-bold">
+                    {importLoading ? 'Processing...' : 'Upload JSON File'}
+                  </span>
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImport}
+                    className="hidden"
+                    disabled={importLoading}
+                  />
+                </label>
               </div>
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-400 bg-clip-text text-transparent tracking-wider">
-              NEURAL TASKS
-            </span>
-          </Link>
-
-          <div className="flex items-center gap-4">
-            <ThemeToggle />
-            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-card/50 rounded-xl border border-cyan-500/20">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-              <span className="text-sm text-muted-foreground">
-                {user?.name || user?.email}
-              </span>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 rounded-xl bg-card/50 border-2 border-red-500/30 text-red-400 hover:border-red-400 hover:shadow-[0_0_20px_rgba(239,68,68,0.3)] transition-all uppercase text-sm font-medium tracking-wide"
-            >
-              Logout
-            </button>
           </div>
         </div>
-      </header>
+      )}
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 relative z-10">
         <div className="max-w-4xl mx-auto">
           {/* Dashboard Header */}
-          <div className="mb-8 text-center sm:text-left">
-            <h2 className="text-4xl font-bold mb-2">
-              <span className="text-foreground">Mission</span>{' '}
-              <span className="bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">Control</span>
-            </h2>
-            <p className="text-muted-foreground">Neural task management interface active</p>
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="text-center sm:text-left">
+              <h2 className="text-4xl font-bold mb-2">
+                <span className="text-foreground">Mission</span>{' '}
+                <span className="bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">Control</span>
+              </h2>
+              <p className="text-muted-foreground">Neural task management interface active</p>
+            </div>
+
+            {/* Export/Import Button */}
+            <button
+              onClick={() => setShowDataOps(true)}
+              className="group relative px-6 py-3 bg-gradient-to-r from-cyan-500/10 to-fuchsia-500/10 border-2 border-cyan-500/30 rounded-xl hover:border-cyan-400 transition-all duration-300 overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 to-fuchsia-500/0 group-hover:from-cyan-500/20 group-hover:to-fuchsia-500/20 transition-all duration-300" />
+              <div className="relative flex items-center gap-2">
+                <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span className="font-bold text-sm uppercase tracking-wider text-cyan-400 group-hover:text-cyan-300 transition-colors">
+                  Data Ops
+                </span>
+              </div>
+            </button>
           </div>
 
           {/* Stats Section */}
