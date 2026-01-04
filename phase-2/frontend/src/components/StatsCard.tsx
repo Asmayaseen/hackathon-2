@@ -2,7 +2,7 @@
 
 interface StatsCardProps {
   label: string;
-  value: number;
+  value: number | string;
   icon: 'total' | 'pending' | 'completed';
   color: 'cyan' | 'fuchsia' | 'green';
 }
