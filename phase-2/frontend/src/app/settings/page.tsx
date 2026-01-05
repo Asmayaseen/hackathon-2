@@ -57,8 +57,16 @@ export default function SettingsPage() {
 
           setPreferences(cleanData);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to fetch preferences:', err);
+        // Fallback to default preferences if backend endpoint not available
+        if (err.response?.status === 404) {
+          console.warn('⚠️ Preferences endpoint not available, using defaults');
+          setMessage({
+            type: 'error',
+            text: 'Settings feature is being deployed. Using default preferences for now.'
+          });
+        }
       } finally {
         setLoading(false);
       }
@@ -105,7 +113,16 @@ export default function SettingsPage() {
 
       // Get detailed error message from backend
       const errorDetail = err.response?.data?.detail || err.message || 'Network error';
-      setMessage({ type: 'error', text: `Failed: ${errorDetail}` });
+
+      // Special handling for 404 (endpoint not deployed yet)
+      if (err.response?.status === 404) {
+        setMessage({
+          type: 'error',
+          text: 'Settings feature is being deployed to the backend. Please try again in a few minutes.'
+        });
+      } else {
+        setMessage({ type: 'error', text: `Failed: ${errorDetail}` });
+      }
     } finally {
       setSaving(false);
     }
