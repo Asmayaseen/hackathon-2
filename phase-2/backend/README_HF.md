@@ -73,3 +73,7 @@ This Space automatically deploys from the Dockerfile. Make sure to set the requi
 ---
 
 Built with ❤️ for Hugging Face Spaces
+
+<\!-- Rebuild triggered: $(date '+%Y-%m-%d %H:%M:%S') - Adding preferences endpoints -->
+
+<!-- Rebuild triggered: Deploying preferences, stats, history, and export endpoints -->
