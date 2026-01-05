@@ -106,6 +106,39 @@ export interface TaskUpdate {
   reminder_offset?: number;
 }
 
+export interface HistoryEntry {
+  id: number;
+  user_id: string;
+  task_id?: number;
+  task_title?: string;
+  action: string;
+  details?: string;
+  timestamp: string;
+}
+
+export interface HistoryResponse {
+  history: HistoryEntry[];
+  count: number;
+  offset: number;
+  limit: number;
+}
+
+export interface Notification {
+  id: number;
+  user_id: string;
+  task_id: number;
+  scheduled_time: string;
+  sent: boolean;
+  notification_type: string;
+  created_at: string;
+  sent_at?: string;
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
+  count: number;
+}
+
 // API Methods
 export const api = {
   // ============ AUTH ENDPOINTS ============
@@ -276,7 +309,7 @@ export const api = {
   /**
    * Get audit log for all tasks or a specific task
    */
-  async getHistory(userId: string, taskId?: number): Promise<any[]> {
+  async getHistory(userId: string, taskId?: number): Promise<HistoryResponse> {
     const url = taskId
       ? `/api/${userId}/history/tasks/${taskId}`
       : `/api/${userId}/history`;
@@ -289,7 +322,7 @@ export const api = {
   /**
    * Get all notifications for user
    */
-  async getNotifications(userId: string, unreadOnly: boolean = false): Promise<any[]> {
+  async getNotifications(userId: string, unreadOnly: boolean = false): Promise<NotificationsResponse> {
     const response = await apiClient.get(`/api/${userId}/notifications`, {
       params: { unread_only: unreadOnly }
     });

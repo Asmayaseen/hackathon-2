@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
-import { api } from '@/lib/api';
-import { Bell, Check, CheckAll, Trash2, Clock, AlertTriangle, Loader2, MessageSquare, BellOff } from 'lucide-react';
+import { api, Notification } from '@/lib/api';
+import { Bell, Check, CheckCheck, Trash2, Clock, AlertTriangle, Loader2, MessageSquare, BellOff } from 'lucide-react';
 
 export default function NotificationsPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-  const [notifications, setNotifications] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
@@ -26,7 +26,7 @@ export default function NotificationsPage() {
     const fetchNotifications = async () => {
       try {
         const data = await api.getNotifications(storedUserId);
-        setNotifications(Array.isArray(data) ? data : data.notifications || []);
+        setNotifications(data.notifications);
       } catch (err) {
         console.error('Failed to fetch notifications:', err);
       } finally {
@@ -42,7 +42,7 @@ export default function NotificationsPage() {
     try {
       await api.markNotificationRead(userId, id);
       setNotifications(prev =>
-        prev.map(n => n.id === id ? { ...n, read: true } : n)
+        prev.map(n => n.id === id ? { ...n, sent: true } : n)
       );
     } catch (err) {
       console.error('Failed to mark read:', err);
@@ -54,7 +54,7 @@ export default function NotificationsPage() {
     try {
       await api.markAllNotificationsRead(userId);
       setNotifications(prev =>
-        prev.map(n => ({ ...n, read: true }))
+        prev.map(n => ({ ...n, sent: true }))
       );
     } catch (err) {
       console.error('Failed to mark all read:', err);
@@ -67,7 +67,25 @@ export default function NotificationsPage() {
     return <MessageSquare className="w-5 h-5 text-fuchsia-400" />;
   };
 
-  const unreadCount = Array.isArray(notifications) ? notifications.filter(n => !n.read).length : 0;
+  const formatNotificationType = (type: string) => {
+    return type
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  const generateMessage = (notification: Notification) => {
+    const type = notification.notification_type.toLowerCase();
+    if (type.includes('reminder')) {
+      return `Task reminder scheduled for ${new Date(notification.scheduled_time).toLocaleString()}`;
+    }
+    if (type.includes('overdue')) {
+      return 'Task is now overdue and requires attention';
+    }
+    return `Notification for task ID ${notification.task_id}`;
+  };
+
+  const unreadCount = Array.isArray(notifications) ? notifications.filter(n => !n.sent).length : 0;
 
   if (loading) {
     return (
@@ -125,24 +143,24 @@ export default function NotificationsPage() {
                 {notifications.map((n) => (
                   <div
                     key={n.id}
-                    className={`p-6 transition-all group ${!n.read ? 'bg-cyan-500/5 border-l-4 border-l-cyan-400' : 'bg-transparent filter grayscale-[0.5] opacity-80'}`}
+                    className={`p-6 transition-all group ${!n.sent ? 'bg-cyan-500/5 border-l-4 border-l-cyan-400' : 'bg-transparent filter grayscale-[0.5] opacity-80'}`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-4">
-                        <div className={`mt-1 p-3 rounded-2xl border-2 transition-all ${!n.read ? 'bg-background border-cyan-500/30 shadow-[0_0_15px_rgba(0,217,255,0.1)]' : 'bg-muted/50 border-transparent'}`}>
-                          {getIcon(n.title)}
+                        <div className={`mt-1 p-3 rounded-2xl border-2 transition-all ${!n.sent ? 'bg-background border-cyan-500/30 shadow-[0_0_15px_rgba(0,217,255,0.1)]' : 'bg-muted/50 border-transparent'}`}>
+                          {getIcon(n.notification_type)}
                         </div>
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
-                             <h3 className={`font-bold uppercase tracking-wide ${!n.read ? 'text-foreground' : 'text-muted-foreground line-through decoration-cyan-500/30'}`}>
-                                {n.title}
+                             <h3 className={`font-bold uppercase tracking-wide ${!n.sent ? 'text-foreground' : 'text-muted-foreground line-through decoration-cyan-500/30'}`}>
+                                {formatNotificationType(n.notification_type)}
                              </h3>
                              <span className="text-[10px] font-mono text-cyan-400/70 border border-cyan-500/20 px-1.5 py-0.5 rounded">
                                 {new Date(n.created_at).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' })}
                              </span>
                           </div>
                           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                            {n.message}
+                            {generateMessage(n)}
                           </p>
                           <div className="flex items-center gap-4 mt-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
                              <span>Source: Neural Node {n.task_id || 'System'}</span>
@@ -152,7 +170,7 @@ export default function NotificationsPage() {
                         </div>
                       </div>
 
-                      {!n.read && (
+                      {!n.sent && (
                         <button
                           onClick={() => handleMarkRead(n.id)}
                           className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-cyan-500/20"

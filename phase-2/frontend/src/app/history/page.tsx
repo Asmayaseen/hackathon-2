@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
-import { api } from '@/lib/api';
+import { api, HistoryEntry } from '@/lib/api';
 import { History, Search, Filter, Loader2, ArrowLeftRight, Edit3, Trash2, CheckCircle2, PlusCircle, Activity } from 'lucide-react';
 
 export default function HistoryPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [query, setQuery] = useState('');
 
   useEffect(() => {
@@ -27,7 +27,7 @@ export default function HistoryPage() {
     const fetchHistory = async () => {
       try {
         const data = await api.getHistory(storedUserId);
-        setHistory(Array.isArray(data) ? data : data.history || []);
+        setHistory(data.history);
       } catch (err) {
         console.error('Failed to fetch audit log:', err);
       } finally {
