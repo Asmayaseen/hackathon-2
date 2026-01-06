@@ -1,0 +1,469 @@
+"""
+Task CRUD API endpoints.
+
+Task: 1.7, 1.8, 1.9
+Spec: specs/api/rest-endpoints.md
+"""
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlmodel import Session, select
+from typing import Optional
+from datetime import datetime, timedelta, timezone
+from pydantic import BaseModel, Field
+from models import Task
+from db import get_session
+from middleware.auth import verify_token
+
+router = APIRouter(prefix="/api", tags=["tasks"])
+
+
+# Request/Response Models
+class TaskCreate(BaseModel):
+    """Request model for creating a task (T022)."""
+    title: str = Field(min_length=1, max_length=200)
+    description: Optional[str] = None
+    # Phase 2 Advanced Features
+    due_date: Optional[datetime] = None
+    priority: Optional[str] = Field(default="none")
+    tags: Optional[list[str]] = Field(default_factory=list)
+    recurrence_pattern: Optional[str] = None
+    reminder_offset: Optional[int] = None
+
+
+class TaskUpdate(BaseModel):
+    """Request model for updating a task (T024)."""
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = None
+    completed: Optional[bool] = None
+    # Phase 2 Advanced Features
+    due_date: Optional[datetime] = None
+    priority: Optional[str] = None
+    tags: Optional[list[str]] = None
+    recurrence_pattern: Optional[str] = None
+    reminder_offset: Optional[int] = None
+
+
+class TaskResponse(BaseModel):
+    """Response model for task operations."""
+    id: int
+    user_id: str
+    title: str
+    description: Optional[str]
+    completed: bool
+    created_at: datetime
+    updated_at: datetime
+    # Phase 2 Advanced Features
+    due_date: Optional[datetime] = None
+    priority: str = "none"
+    tags: list[str] = Field(default_factory=list)
+    recurrence_pattern: Optional[str] = None
+    reminder_offset: Optional[int] = None
+    is_recurring: bool = False
+    parent_recurring_id: Optional[int] = None
+
+
+@router.get("/{user_id}/tasks")
+async def get_tasks(
+    user_id: str,
+    status_filter: Optional[str] = Query(None, alias="status"),
+    priority_filter: Optional[str] = Query(None, alias="priority"),
+    due_filter: Optional[str] = Query(None, alias="due"),
+    sort_by: Optional[str] = Query("created_at", alias="sort"),
+    sort_order: Optional[str] = Query("desc", alias="order"),
+    session: Session = Depends(get_session),
+    authenticated_user_id: str = Depends(verify_token)
+):
+    """
+    Get all tasks for a user with optional filtering and sorting (US2).
+
+    Args:
+        user_id: User ID from URL path
+        status_filter: Filter by status (all, pending, completed)
+        priority_filter: Filter by priority (all, high, medium, low, none)
+        due_filter: Filter by due date (all, today, overdue, week)
+        sort_by: Sort by field (created_at, due_date, priority, title)
+        sort_order: Sort direction (asc, desc)
+        session: Database session
+        authenticated_user_id: User ID from JWT token
+
+    Returns:
+        Object with tasks array and counts
+
+    Raises:
+        HTTPException: 403 if user_id doesn't match authenticated user
+    """
+    # Verify user_id matches authenticated user
+    if user_id != authenticated_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot access other users' tasks"
+        )
+
+    # Build query
+    query = select(Task).where(Task.user_id == user_id)
+
+    # Apply status filter
+    if status_filter == "pending":
+        query = query.where(Task.completed == False)
+    elif status_filter == "completed":
+        query = query.where(Task.completed == True)
+    # 'all' or None - no filter needed
+
+    # Apply priority filter (US2)
+    if priority_filter and priority_filter != "all":
+        query = query.where(Task.priority == priority_filter)
+
+    # Apply due date filter (US2)
+    now = datetime.now(timezone.utc)
+    if due_filter == "today":
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start.replace(hour=23, minute=59, second=59)
+        query = query.where(Task.due_date >= today_start, Task.due_date <= today_end)
+    elif due_filter == "overdue":
+        query = query.where(Task.due_date < now, Task.completed == False)
+    elif due_filter == "week":
+        week_end = now + timedelta(days=7)
+        query = query.where(Task.due_date >= now, Task.due_date <= week_end)
+
+    # Apply sorting (US2)
+    sort_field = None
+    if sort_by == "created_at":
+        sort_field = Task.created_at
+    elif sort_by == "due_date":
+        sort_field = Task.due_date
+    elif sort_by == "priority":
+        # Priority order: high > medium > low > none
+        priority_order = {
+            "high": 0,
+            "medium": 1,
+            "low": 2,
+            "none": 3
+        }
+        # For now, sort by string (will refine if needed)
+        sort_field = Task.priority
+    elif sort_by == "title":
+        sort_field = Task.title
+    else:
+        sort_field = Task.created_at  # default
+
+    if sort_field:
+        if sort_order == "asc":
+            query = query.order_by(sort_field.asc())
+        else:
+            query = query.order_by(sort_field.desc())
+
+    # Execute query
+    tasks = session.exec(query).all()
+
+    # Calculate counts
+    total = len(tasks)
+    pending = sum(1 for t in tasks if not t.completed)
+    completed = sum(1 for t in tasks if t.completed)
+
+    return {
+        "tasks": tasks,
+        "count": {
+            "total": total,
+            "pending": pending,
+            "completed": completed
+        }
+    }
+
+
+@router.post("/{user_id}/tasks", status_code=status.HTTP_201_CREATED, response_model=TaskResponse)
+async def create_task(
+    user_id: str,
+    task_data: TaskCreate,
+    session: Session = Depends(get_session),
+    authenticated_user_id: str = Depends(verify_token)
+):
+    """
+    Create a new task for a user.
+
+    Args:
+        user_id: User ID from URL path
+        task_data: Task creation data (title, description)
+        session: Database session
+        authenticated_user_id: User ID from JWT token
+
+    Returns:
+        Created task object
+
+    Raises:
+        HTTPException: 403 if user_id doesn't match authenticated user
+        HTTPException: 400 if validation fails
+    """
+    # Verify user_id matches authenticated user
+    if user_id != authenticated_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot create tasks for other users"
+        )
+
+    # Validate priority (T025)
+    if task_data.priority and task_data.priority not in ['high', 'medium', 'low', 'none']:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid priority. Must be one of: high, medium, low, none"
+        )
+
+    # Validate due_date (T026) - prevent past dates unless explicitly allowed
+    if task_data.due_date:
+        # Make both datetimes timezone-aware for comparison
+        now_utc = datetime.now(timezone.utc)
+        if task_data.due_date < now_utc:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Due date cannot be in the past"
+            )
+
+    # Create new task (T022, T023)
+    new_task = Task(
+        user_id=user_id,
+        title=task_data.title,
+        description=task_data.description,
+        completed=False,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
+        # Phase 2 Advanced Features
+        due_date=task_data.due_date,
+        priority=task_data.priority or "none",
+        tags=task_data.tags or [],
+        recurrence_pattern=task_data.recurrence_pattern,
+        reminder_offset=task_data.reminder_offset,
+        is_recurring=bool(task_data.recurrence_pattern)
+    )
+
+    # Save to database
+    session.add(new_task)
+    session.commit()
+    session.refresh(new_task)
+
+    return new_task
+
+
+@router.get("/{user_id}/tasks/{task_id}", response_model=TaskResponse)
+async def get_task(
+    user_id: str,
+    task_id: int,
+    session: Session = Depends(get_session),
+    authenticated_user_id: str = Depends(verify_token)
+):
+    """
+    Get a specific task by ID.
+
+    Args:
+        user_id: User ID from URL path
+        task_id: Task ID from URL path
+        session: Database session
+        authenticated_user_id: User ID from JWT token
+
+    Returns:
+        Task object
+
+    Raises:
+        HTTPException: 403 if user_id doesn't match authenticated user
+        HTTPException: 404 if task not found
+    """
+    # Verify user_id matches authenticated user
+    if user_id != authenticated_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot access other users' tasks"
+        )
+
+    # Find task
+    task = session.get(Task, task_id)
+
+    if not task or task.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found"
+        )
+
+    return task
+
+
+@router.put("/{user_id}/tasks/{task_id}", response_model=TaskResponse)
+async def update_task(
+    user_id: str,
+    task_id: int,
+    task_data: TaskUpdate,
+    session: Session = Depends(get_session),
+    authenticated_user_id: str = Depends(verify_token)
+):
+    """
+    Update a task.
+
+    Args:
+        user_id: User ID from URL path
+        task_id: Task ID from URL path
+        task_data: Task update data (title, description, completed)
+        session: Database session
+        authenticated_user_id: User ID from JWT token
+
+    Returns:
+        Updated task object
+
+    Raises:
+        HTTPException: 403 if user_id doesn't match authenticated user
+        HTTPException: 404 if task not found
+    """
+    # Verify user_id matches authenticated user
+    if user_id != authenticated_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot update other users' tasks"
+        )
+
+    # Find task
+    task = session.get(Task, task_id)
+
+    if not task or task.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found"
+        )
+
+    # Update fields if provided
+    if task_data.title is not None:
+        task.title = task_data.title
+    if task_data.description is not None:
+        task.description = task_data.description
+    if task_data.completed is not None:
+        task.completed = task_data.completed
+
+    # Phase 2 Advanced Features (T024)
+    if task_data.priority is not None:
+        # Validate priority (T025)
+        if task_data.priority not in ['high', 'medium', 'low', 'none']:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid priority. Must be one of: high, medium, low, none"
+            )
+        task.priority = task_data.priority
+
+    if task_data.due_date is not None:
+        # Allow editing overdue tasks, but prevent setting new past dates (T026)
+        now_utc = datetime.now(timezone.utc)
+        if task_data.due_date < now_utc and task.due_date is None:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Due date cannot be in the past"
+            )
+        task.due_date = task_data.due_date
+
+    if task_data.tags is not None:
+        task.tags = task_data.tags
+
+    if task_data.recurrence_pattern is not None:
+        task.recurrence_pattern = task_data.recurrence_pattern
+        task.is_recurring = bool(task_data.recurrence_pattern)
+
+    if task_data.reminder_offset is not None:
+        task.reminder_offset = task_data.reminder_offset
+
+    task.updated_at = datetime.now(timezone.utc)
+
+    # Save changes
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+
+    return task
+
+
+@router.delete("/{user_id}/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_task(
+    user_id: str,
+    task_id: int,
+    session: Session = Depends(get_session),
+    authenticated_user_id: str = Depends(verify_token)
+):
+    """
+    Delete a task.
+
+    Args:
+        user_id: User ID from URL path
+        task_id: Task ID from URL path
+        session: Database session
+        authenticated_user_id: User ID from JWT token
+
+    Returns:
+        None (204 No Content)
+
+    Raises:
+        HTTPException: 403 if user_id doesn't match authenticated user
+        HTTPException: 404 if task not found
+    """
+    # Verify user_id matches authenticated user
+    if user_id != authenticated_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot delete other users' tasks"
+        )
+
+    # Find task
+    task = session.get(Task, task_id)
+
+    if not task or task.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found"
+        )
+
+    # Delete task
+    session.delete(task)
+    session.commit()
+
+    return None
+
+
+@router.patch("/{user_id}/tasks/{task_id}/complete", response_model=TaskResponse)
+async def toggle_task_completion(
+    user_id: str,
+    task_id: int,
+    session: Session = Depends(get_session),
+    authenticated_user_id: str = Depends(verify_token)
+):
+    """
+    Toggle task completion status.
+
+    Args:
+        user_id: User ID from URL path
+        task_id: Task ID from URL path
+        session: Database session
+        authenticated_user_id: User ID from JWT token
+
+    Returns:
+        Updated task object
+
+    Raises:
+        HTTPException: 403 if user_id doesn't match authenticated user
+        HTTPException: 404 if task not found
+    """
+    # Verify user_id matches authenticated user
+    if user_id != authenticated_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot update other users' tasks"
+        )
+
+    # Find task
+    task = session.get(Task, task_id)
+
+    if not task or task.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Task not found"
+        )
+
+    # Toggle completion status
+    task.completed = not task.completed
+    task.updated_at = datetime.now(timezone.utc)
+
+    # Save changes
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+
+    return task
