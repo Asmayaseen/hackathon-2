@@ -63,19 +63,19 @@ export default function SignupPage() {
       <div className="absolute bottom-1/4 left-0 w-96 h-96 bg-cyan-500/20 rounded-full filter blur-[120px] animate-pulse [animation-delay:1s]" />
 
       {/* Theme Toggle - Top Right */}
-      <div className="absolute top-6 right-6 z-20">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20">
         <ThemeToggle />
       </div>
 
       {/* Back to Home */}
       <Link
         href="/"
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 text-fuchsia-400 hover:text-fuchsia-300 transition-colors"
+        className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20 flex items-center gap-2 text-fuchsia-400 hover:text-fuchsia-300 transition-colors"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>
-        <span className="text-sm font-medium uppercase tracking-wider">Back</span>
+        <span className="hidden sm:inline text-sm font-medium uppercase tracking-wider">Back</span>
       </Link>
 
       <div className="min-h-screen flex items-center justify-center relative z-10 px-4 py-12">
@@ -83,21 +83,21 @@ export default function SignupPage() {
           {/* Card */}
           <div className="relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-fuchsia-500 to-cyan-500 rounded-3xl blur-lg opacity-50" />
-            <div className="relative bg-card/90 backdrop-blur-xl p-8 rounded-2xl border-2 border-fuchsia-500/30">
+            <div className="relative bg-card/90 backdrop-blur-xl p-6 sm:p-8 rounded-2xl border-2 border-fuchsia-500/30">
 
               {/* Logo */}
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center mb-4">
-                  <div className="relative w-16 h-16">
+              <div className="text-center mb-6 sm:mb-8">
+                <div className="inline-flex items-center justify-center mb-3 sm:mb-4">
+                  <div className="relative w-12 h-12 sm:w-16 sm:h-16">
                     <div className="absolute inset-0 bg-gradient-to-br from-fuchsia-400 to-cyan-500 rounded-2xl blur-md opacity-60 animate-pulse" />
                     <div className="relative w-full h-full bg-gradient-to-br from-fuchsia-500 to-cyan-500 rounded-2xl flex items-center justify-center border-2 border-fuchsia-400/50 shadow-[0_0_30px_rgba(217,70,239,0.4)]">
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                       </svg>
                     </div>
                   </div>
                 </div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent mb-2">
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-fuchsia-400 to-cyan-400 bg-clip-text text-transparent mb-2">
                   JOIN THE NETWORK
                 </h1>
                 <p className="text-muted-foreground text-sm uppercase tracking-wider">Initialize New Account</p>
@@ -105,7 +105,7 @@ export default function SignupPage() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium mb-2 text-fuchsia-400 uppercase tracking-wide">
+                  <label htmlFor="name" className="block text-xs sm:text-sm font-medium mb-2 text-fuchsia-400 uppercase tracking-wide">
                     Display Name
                   </label>
                   <input
@@ -113,7 +113,7 @@ export default function SignupPage() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-background/50 border-2 border-fuchsia-500/30 text-foreground placeholder-muted-foreground focus:border-fuchsia-400 focus:shadow-[0_0_20px_rgba(217,70,239,0.3)] focus:outline-none transition-all input-cyber"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl bg-background/50 border-2 border-fuchsia-500/30 text-foreground placeholder-muted-foreground focus:border-fuchsia-400 focus:shadow-[0_0_20px_rgba(217,70,239,0.3)] focus:outline-none transition-all input-cyber"
                     placeholder="Your name"
                     required
                     disabled={loading}
@@ -121,7 +121,7 @@ export default function SignupPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium mb-2 text-fuchsia-400 uppercase tracking-wide">
+                  <label htmlFor="email" className="block text-xs sm:text-sm font-medium mb-2 text-fuchsia-400 uppercase tracking-wide">
                     Email Address
                   </label>
                   <input
@@ -129,7 +129,7 @@ export default function SignupPage() {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-background/50 border-2 border-fuchsia-500/30 text-foreground placeholder-muted-foreground focus:border-fuchsia-400 focus:shadow-[0_0_20px_rgba(217,70,239,0.3)] focus:outline-none transition-all input-cyber"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl bg-background/50 border-2 border-fuchsia-500/30 text-foreground placeholder-muted-foreground focus:border-fuchsia-400 focus:shadow-[0_0_20px_rgba(217,70,239,0.3)] focus:outline-none transition-all input-cyber"
                     placeholder="you@example.com"
                     required
                     disabled={loading}
@@ -137,7 +137,7 @@ export default function SignupPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium mb-2 text-fuchsia-400 uppercase tracking-wide">
+                  <label htmlFor="password" className="block text-xs sm:text-sm font-medium mb-2 text-fuchsia-400 uppercase tracking-wide">
                     Password
                   </label>
                   <input
@@ -145,7 +145,7 @@ export default function SignupPage() {
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-background/50 border-2 border-fuchsia-500/30 text-foreground placeholder-muted-foreground focus:border-fuchsia-400 focus:shadow-[0_0_20px_rgba(217,70,239,0.3)] focus:outline-none transition-all input-cyber"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl bg-background/50 border-2 border-fuchsia-500/30 text-foreground placeholder-muted-foreground focus:border-fuchsia-400 focus:shadow-[0_0_20px_rgba(217,70,239,0.3)] focus:outline-none transition-all input-cyber"
                     placeholder="Min 8 characters"
                     required
                     minLength={8}
@@ -154,7 +154,7 @@ export default function SignupPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2 text-fuchsia-400 uppercase tracking-wide">
+                  <label htmlFor="confirmPassword" className="block text-xs sm:text-sm font-medium mb-2 text-fuchsia-400 uppercase tracking-wide">
                     Confirm Password
                   </label>
                   <input
@@ -162,7 +162,7 @@ export default function SignupPage() {
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl bg-background/50 border-2 border-fuchsia-500/30 text-foreground placeholder-muted-foreground focus:border-fuchsia-400 focus:shadow-[0_0_20px_rgba(217,70,239,0.3)] focus:outline-none transition-all input-cyber"
+                    className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl bg-background/50 border-2 border-fuchsia-500/30 text-foreground placeholder-muted-foreground focus:border-fuchsia-400 focus:shadow-[0_0_20px_rgba(217,70,239,0.3)] focus:outline-none transition-all input-cyber"
                     placeholder="Repeat password"
                     required
                     minLength={8}
