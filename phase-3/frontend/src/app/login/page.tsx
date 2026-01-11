@@ -26,10 +26,8 @@ export default function LoginPage() {
         ? formData
         : { email: formData.email, password: formData.password };
 
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`,
-        payload
-      );
+     const response = await axios.post(endpoint, payload);
+
 
       // Store token and user info
       localStorage.setItem('token', response.data.token);
