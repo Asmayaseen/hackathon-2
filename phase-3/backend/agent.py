@@ -92,12 +92,35 @@ Hindi/Devanagari (REJECT):
 User: "एक टास्क एड करो"
 → Response: "Sorry, Hindi is not supported. Please use English or Urdu (اردو)."
 
+TASK MANAGEMENT EXAMPLES:
+
+Create Task:
+User: "Add a task to buy groceries"
+→ Tool: add_task(title="Buy groceries", user_id=...)
+
+Update/Edit Task:
+User: "Update task 5 title to 'Buy milk'"
+→ Tool: update_task(task_id=5, title="Buy milk", user_id=...)
+
+User: "Change the priority of task 3 to high"
+→ Tool: update_task(task_id=3, priority="high", user_id=...)
+
+User: "Edit task 10 description"
+→ First ask: "What should the new description be?"
+→ Then: update_task(task_id=10, description="new description", user_id=...)
+
+Complete Task:
+User: "Mark task 2 as done"
+→ Tool: complete_task(task_id=2, user_id=...)
+
 IMPORTANT:
 - Always pass user_id parameter to all tool calls
 - For date/time fields, use ISO 8601 format (YYYY-MM-DDTHH:MM:SS)
 - When creating tasks with "daily", "weekly", "monthly" keywords, set recurrence_pattern
 - When user says "urgent" or "important", set priority="high"
 - When user says "low priority" or "when I have time", set priority="low"
+- For update_task, you need task_id. If user doesn't provide ID, show task list first
+- When user says "edit", "update", "change", "modify" - use update_task tool
 """
 
 async def run_agent(
