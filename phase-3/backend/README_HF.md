@@ -19,6 +19,10 @@ FastAPI backend for Evolution Todo application - A cyberpunk-themed task managem
 - 🗄️ PostgreSQL database with SQLModel
 - 🔒 Secure password hashing with bcrypt
 - 🌐 CORS-enabled for frontend integration
+- 🤖 AI Chatbot with OpenAI Agents SDK
+- 🎤 Voice transcription (English + Pakistani Urdu)
+- 🛠️ MCP Tools for task management (12 tools)
+- 🗣️ Multi-language support (English + Urdu, Hindi rejected)
 
 ## API Endpoints
 
@@ -41,7 +45,9 @@ Required in Hugging Face Space Secrets:
 ```
 DATABASE_URL=postgresql://user:password@host:port/dbname?sslmode=require
 JWT_SECRET=your_secure_random_secret_key
-CORS_ORIGINS=https://hackathon-2-chi-one.vercel.app
+CORS_ORIGINS=https://frontend-zto4odyj8-asma-yaseens-projects.vercel.app,http://localhost:3000
+GROQ_API_KEY=your_groq_api_key_here
+GROQ_BASE_URL=https://api.groq.com/openai/v1
 ```
 
 ## Tech Stack
@@ -74,6 +80,4 @@ This Space automatically deploys from the Dockerfile. Make sure to set the requi
 
 Built with ❤️ for Hugging Face Spaces
 
-<\!-- Rebuild triggered: $(date '+%Y-%m-%d %H:%M:%S') - Adding preferences endpoints -->
-
-<!-- Rebuild triggered: Deploying preferences, stats, history, and export endpoints -->
+<!-- Rebuild triggered: 2026-01-11 - Phase 3 Complete: Voice + AI Chat + Language Support (English + Urdu) -->
