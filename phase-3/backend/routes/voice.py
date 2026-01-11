@@ -12,8 +12,10 @@ import tempfile
 
 router = APIRouter(prefix="/api", tags=["voice"])
 
-# Initialize OpenAI client
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY") or os.getenv("GROQ_API_KEY"))
+# Initialize client (Groq with OpenAI-compatible API)
+api_key = os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY")
+base_url = os.getenv("GROQ_BASE_URL") if os.getenv("GROQ_API_KEY") else None
+client = OpenAI(api_key=api_key, base_url=base_url)
 
 
 @router.post("/{user_id}/transcribe")
