@@ -1,23 +1,8 @@
 {
-  "version": 2,
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "phase-2/backend/main.py"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "phase-2/frontend/$1"
-    }
-  ],
-  "builds": [
-    {
-      "src": "phase-2/frontend/package.json",
-      "use": "@vercel/next"
-    },
-    {
-      "src": "phase-2/backend/main.py",
-      "use": "@vercel/python"
-    }
-  ]
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "cd phase-3/frontend && npm install && npm run build",
+  "devCommand": "cd phase-3/frontend && npm run dev",
+  "installCommand": "npm install --prefix phase-3/frontend",
+  "framework": "nextjs",
+  "outputDirectory": "phase-3/frontend/.next"
 }
