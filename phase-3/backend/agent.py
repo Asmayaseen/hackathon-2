@@ -1,239 +1,211 @@
 """
-OpenAI Agents SDK integration for Evolution Todo.
+OpenAI Agents SDK pattern integration for Evolution Todo.
 
 Task: T-CHAT-010
 Spec: specs/phase-3-chatbot/spec.md (US-CHAT-1, US-CHAT-7)
 
-Supports both OpenAI and Groq APIs (OpenAI-compatible)
+Uses OpenAI SDK with function tools for task management.
 """
-from openai import OpenAI
+from openai import AsyncOpenAI
 import os
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
+import json
 
-# Configure client for OpenAI or Groq
-# Groq: Set GROQ_API_KEY and use base_url="https://api.groq.com/openai/v1"
-api_key = os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY")
-base_url = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1") if os.getenv("GROQ_API_KEY") else None
-
-client = OpenAI(
-    api_key=api_key,
-    base_url=base_url
+# Import validation and intent classification
+from intent_classifier import classify_intent, IntentClassifier
+from tool_validation import (
+    validate_add_task,
+    validate_update_task,
+    validate_language,
+    ToolValidator
 )
 
-# Model selection: Groq or OpenAI
-MODEL_NAME = os.getenv("AI_MODEL", "openai/gpt-oss-20b" if os.getenv("GROQ_API_KEY") else "gpt-4o-2024-11-20")
+# Configure client for OpenAI or Groq
+# Priority: GROQ_API_KEY > OPENAI_API_KEY
+if os.getenv("GROQ_API_KEY"):
+    api_key = os.getenv("GROQ_API_KEY")
+    base_url = "https://api.groq.com/openai/v1"
+    model_name = "llama-3.3-70b-versatile"
+    print(f"🔧 Using Groq API with model: {model_name}")
+elif os.getenv("OPENAI_API_KEY"):
+    api_key = os.getenv("OPENAI_API_KEY")
+    base_url = None
+    model_name = os.getenv("OPENAI_MODEL", "gpt-4o")
+    print(f"🔧 Using OpenAI API with model: {model_name}")
+else:
+    raise ValueError("Either OPENAI_API_KEY or GROQ_API_KEY must be set")
 
-AGENT_INSTRUCTIONS = """
-You are Evolution Todo Assistant, a helpful AI for managing tasks.
+# Create OpenAI client
+client = AsyncOpenAI(api_key=api_key, base_url=base_url)
 
-CAPABILITIES:
-- Understand natural language in English and Pakistani Urdu (اردو)
-- Extract task details: title, priority, due dates, tags, recurrence
-- Create, update, complete, delete, and search tasks
-- Provide task analytics and summaries
-- Support voice input (transcribed to text)
+# Define MCP tools schema for function calling
+MCP_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "add_task",
+            "description": "Create a new task",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string", "description": "Task title (required)"},
+                    "description": {"type": "string", "description": "Task description"},
+                    "due_date": {"type": "string", "description": "Due date in ISO format"},
+                    "priority": {"type": "string", "enum": ["high", "medium", "low", "none"], "description": "Priority level"}
+                },
+                "required": ["title"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "list_tasks",
+            "description": "List all tasks",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "status": {"type": "string", "enum": ["all", "pending", "completed"], "description": "Filter by status"},
+                    "priority": {"type": "string", "description": "Filter by priority"},
+                    "sort_by": {"type": "string", "description": "Sort field"}
+                }
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "complete_task",
+            "description": "Mark a task as complete",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "integer", "description": "Task ID to complete"}
+                },
+                "required": ["task_id"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "delete_task",
+            "description": "Delete a task",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "integer", "description": "Task ID to delete"}
+                },
+                "required": ["task_id"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "update_task",
+            "description": "Update task details",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "task_id": {"type": "integer", "description": "Task ID to update"},
+                    "title": {"type": "string", "description": "New title"},
+                    "description": {"type": "string", "description": "New description"},
+                    "priority": {"type": "string", "description": "New priority"}
+                },
+                "required": ["task_id"]
+            }
+        }
+    }
+]
 
-LANGUAGE SUPPORT (IMPORTANT):
-- ONLY English and Pakistani Urdu (اردو) are supported
-- Hindi is NOT supported
-- If user writes in Hindi/Devanagari script (e.g., एक, काम), politely respond:
-  "Sorry, Hindi is not supported. Please use English or Urdu (اردو)."
+AGENT_INSTRUCTIONS = """You are Evolution Todo Assistant. Help users manage tasks.
 
-BEHAVIOR:
-- Be friendly, conversational, and helpful
-- Confirm destructive actions before executing (e.g., "Delete this task?")
-- Format task lists clearly with status indicators:
-  ✅ Completed tasks
-  ⬜ Pending tasks
-  ⚡ Priority indicators (high/medium/low)
-  📅 Due dates
-  🏷️ Tags
-  🔁 Recurring tasks
-- Detect language automatically and respond in the same language (English or Urdu only)
-- Parse dates intelligently:
-  - "tomorrow" → next day
-  - "Friday" → next Friday
-  - "next week" → 7 days from now
-  - "in 3 days" → 3 days from now
-- Handle ambiguity: ask clarifying questions if needed
-- Be concise but informative
+Available tools:
+- add_task: Create new tasks
+- list_tasks: Show tasks (no parameters needed for all tasks)
+- complete_task: Mark task complete
+- delete_task: Delete task
+- update_task: Update task details
 
-EXAMPLES:
+Always respond in the same language as the user (English or Urdu)."""
 
-English:
-User: "Hello" or "Hi"
-→ Response: "Hello! I'm your task management assistant. How can I help you today?"
-
-User: "Add a task to buy groceries tomorrow at 5 PM"
-→ Tool: add_task(user_id=..., title="Buy groceries", due_date="2026-01-06T17:00:00")
-→ Response: "✅ Task created: 'Buy groceries' due tomorrow at 5 PM"
-
-User: "Show me all my high priority tasks"
-→ Tool: list_tasks(user_id=..., priority="high")
-→ Response: "📋 Found 3 high priority task(s): [list formatted]"
-
-User: "Mark task 5 as done"
-→ Tool: complete_task(user_id=..., task_id=5)
-→ Response: "✅ Task marked as completed"
-
-Pakistani Urdu (اردو):
-User: "السلام علیکم" or "ہیلو"
-→ Response: "وعلیکم السلام! میں آپ کا ٹاسک منیجمنٹ اسسٹنٹ ہوں۔ آج میں آپ کی کیسے مدد کر سکتا ہوں؟"
-
-User: "ہفتہ وار گروسری شاپنگ کا کام بنائیں"
-→ Tool: add_task(user_id=..., title="گروسری شاپنگ", recurrence_pattern="weekly")
-→ Response: "✅ ہفتہ وار کام بنایا گیا: 'گروسری شاپنگ'"
-
-User: "میری تمام فہرست دکھائیں"
-→ Tool: list_tasks(user_id=...)
-→ Response: "📋 آپ کے [count] کام ملے"
-
-Hindi/Devanagari (REJECT):
-User: "एक टास्क एड करो"
-→ Response: "Sorry, Hindi is not supported. Please use English or Urdu (اردو)."
-
-TASK MANAGEMENT EXAMPLES:
-
-Create Task:
-User: "Add a task to buy groceries"
-→ Tool: add_task(title="Buy groceries", user_id=...)
-
-Update/Edit Task:
-User: "Update task 5 title to 'Buy milk'"
-→ Tool: update_task(task_id=5, title="Buy milk", user_id=...)
-
-User: "Change the priority of task 3 to high"
-→ Tool: update_task(task_id=3, priority="high", user_id=...)
-
-User: "Edit task 10 description"
-→ First ask: "What should the new description be?"
-→ Then: update_task(task_id=10, description="new description", user_id=...)
-
-Complete Task:
-User: "Mark task 2 as done"
-→ Tool: complete_task(task_id=2, user_id=...)
-
-IMPORTANT:
-- Always pass user_id parameter to all tool calls
-- For date/time fields, use ISO 8601 format (YYYY-MM-DDTHH:MM:SS)
-- When creating tasks with "daily", "weekly", "monthly" keywords, set recurrence_pattern
-- When user says "urgent" or "important", set priority="high"
-- When user says "low priority" or "when I have time", set priority="low"
-- For update_task, you need task_id. If user doesn't provide ID, show task list first
-- When user says "edit", "update", "change", "modify" - use update_task tool
-"""
 
 async def run_agent(
     conversation_history: List[Dict[str, str]],
     user_message: str,
     user_id: str
 ) -> Tuple[str, List[Dict]]:
-    """
-    Run AI agent with conversation context using OpenAI Agents SDK.
+    """Run AI agent with conversation context."""
+    # Language validation
+    is_valid_language, error_message = validate_language(user_message)
+    if not is_valid_language:
+        return error_message, []
 
-    Args:
-        conversation_history: Previous messages [{"role": "user"|"assistant", "content": str}]
-        user_message: New user message to process
-        user_id: Current user ID (required for MCP tool calls)
+    # Intent classification
+    intent = classify_intent(user_message, conversation_history)
+    confidence = IntentClassifier.get_confidence_score(user_message, intent)
+    print(f"🧠 Intent: {intent} (confidence: {confidence:.2f})")
 
-    Returns:
-        Tuple of (assistant_response: str, tool_calls: List[Dict])
-    """
-    # Import MCP tools from mcp_server
-    from mcp_server import list_tools
+    # Build messages
+    messages = [{"role": "system", "content": AGENT_INSTRUCTIONS}]
+    for msg in conversation_history[-10:]:
+        messages.append({"role": msg["role"], "content": msg["content"]})
+    messages.append({"role": "user", "content": user_message})
 
-    # Build full message history
-    messages = conversation_history + [
-        {"role": "user", "content": user_message}
-    ]
-
-    # Get MCP tools
-    mcp_tools = await list_tools()
-
-    # Convert MCP tools to OpenAI function calling format
-    openai_tools = []
-    for tool in mcp_tools:
-        openai_tools.append({
-            "type": "function",
-            "function": {
-                "name": tool.name,
-                "description": tool.description,
-                "parameters": tool.inputSchema
-            }
-        })
-
-    # Call OpenAI with function calling (OpenAI Agents SDK pattern)
-    response = client.chat.completions.create(
-        model=MODEL_NAME,
-        messages=[
-            {"role": "system", "content": AGENT_INSTRUCTIONS}
-        ] + messages,
-        tools=openai_tools,
-        tool_choice="auto"
-    )
-
-    # Extract response
-    assistant_message = response.choices[0].message
-    tool_calls = []
-
-    # If AI wants to call tools
-    if assistant_message.tool_calls:
-        from mcp_server import call_tool
-        import json
-
-        # Execute each tool call
-        tool_results = []
-        for tool_call in assistant_message.tool_calls:
-            tool_name = tool_call.function.name
-            tool_args = json.loads(tool_call.function.arguments)
-
-            # Inject user_id into tool arguments
-            tool_args["user_id"] = user_id
-
-            # Execute MCP tool
-            result = await call_tool(tool_name, tool_args)
-
-            tool_results.append({
-                "tool": tool_name,
-                "args": tool_args,
-                "result": result[0].text if result else "No result"
-            })
-
-            tool_calls.append({
-                "tool": tool_name,
-                "args": tool_args
-            })
-
-        # Get final response after tool execution
-        tool_call_msgs = [
-            {
-                "role": "tool",
-                "tool_call_id": assistant_message.tool_calls[i].id,
-                "content": tool_results[i]["result"]
-            } for i in range(len(tool_results))
-        ]
-
-        messages_with_tools = messages + [
-            {"role": "assistant", "content": assistant_message.content or "", "tool_calls": [
-                {
-                    "id": tc.id,
-                    "type": "function",
-                    "function": {"name": tc.function.name, "arguments": tc.function.arguments}
-                } for tc in assistant_message.tool_calls
-            ]}
-        ] + tool_call_msgs
-
-        final_response = client.chat.completions.create(
-            model=MODEL_NAME,
-            messages=[
-                {"role": "system", "content": AGENT_INSTRUCTIONS}
-            ] + messages_with_tools
+    try:
+        # Call API with tools (AsyncOpenAI requires await)
+        response = await client.chat.completions.create(
+            model=model_name,
+            messages=messages,
+            tools=MCP_TOOLS,
+            tool_choice="auto"
         )
 
-        assistant_response = final_response.choices[0].message.content
+        message = response.choices[0].message
+        tool_calls = []
+        assistant_response = message.content or ""
 
-    else:
-        # No tools called, just return AI response
-        assistant_response = assistant_message.content
+        # Execute tool calls
+        if message.tool_calls:
+            from mcp_server import call_tool
 
-    return assistant_response, tool_calls
+            for tool_call in message.tool_calls:
+                tool_name = tool_call.function.name
+                args = json.loads(tool_call.function.arguments or "{}")
+                args["user_id"] = user_id
+
+                # Validate and execute
+                try:
+                    if tool_name == "add_task":
+                        args = validate_add_task(args, user_message)
+                    elif tool_name == "update_task":
+                        args = validate_update_task(args)
+                except Exception as e:
+                    return f"❌ Validation error: {str(e)}", []
+
+                result = await call_tool(tool_name, args)
+                result_text = result[0].text if result else "Done"
+
+                tool_calls.append({"tool": tool_name, "args": args})
+
+                # Get final response after tool
+                messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": result_text
+                })
+
+            # Get final response (async)
+            final = await client.chat.completions.create(
+                model=model_name,
+                messages=messages
+            )
+            assistant_response = final.choices[0].message.content or ""
+
+        return assistant_response, tool_calls
+
+    except Exception as e:
+        error_msg = f"❌ Agent error: {str(e)}"
+        print(error_msg)
+        return error_msg, []

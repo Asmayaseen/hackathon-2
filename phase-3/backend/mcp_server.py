@@ -9,8 +9,13 @@ from mcp.types import Tool, TextContent
 from typing import Sequence
 from sqlmodel import Session, select
 from datetime import datetime
+import httpx
+import os
 from models import Task
 from db import engine
+
+# API Base URL for REST API calls
+API_BASE = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 # Initialize MCP Server
 mcp_server = Server("evolution-todo-mcp")
@@ -21,38 +26,59 @@ async def list_tools() -> Sequence[Tool]:
     """Return list of available tools for AI agent (11 total)."""
     return [
         # Tool 1: add_task (T-CHAT-004)
+        # FIXES: Strict schema validation, description auto-generated, recurrence_pattern strict
         Tool(
             name="add_task",
-            description="Create a new task with optional priority, due date, tags, and recurrence",
+            description=(
+                "Create a new task. IMPORTANT: "
+                "1. description is REQUIRED (will be auto-generated if missing) "
+                "2. due_date is REQUIRED in ISO format "
+                "3. recurrence_pattern: ONLY use for recurring tasks ('daily'|'weekly'|'monthly'). "
+                "   For one-time tasks, DO NOT include this field. "
+                "4. NEVER send null values"
+            ),
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "user_id": {"type": "string", "description": "User ID"},
-                    "title": {"type": "string", "description": "Task title (required)"},
-                    "description": {"type": "string", "description": "Task description (optional)"},
+                    "user_id": {
+                        "type": "string",
+                        "description": "User ID (required)"
+                    },
+                    "title": {
+                        "type": "string",
+                        "description": "Task title (required, 1-200 characters)"
+                    },
+                    "description": {
+                        "type": "string",
+                        "description": "Task description (required - use title if not provided by user)"
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "When task is due (required, ISO 8601: YYYY-MM-DDTHH:MM:SS)"
+                    },
                     "priority": {
                         "type": "string",
                         "enum": ["low", "medium", "high", "none"],
                         "default": "none",
                         "description": "Task priority level"
                     },
-                    "due_date": {
-                        "type": "string",
-                        "format": "date-time",
-                        "description": "When task is due (ISO 8601 format)"
-                    },
                     "tags": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "Task tags for categorization"
+                        "description": "Task tags for categorization (optional)"
                     },
                     "recurrence_pattern": {
                         "type": "string",
                         "enum": ["daily", "weekly", "monthly"],
-                        "description": "Recurring pattern for repeating tasks"
+                        "description": (
+                            "Recurring pattern ONLY for repeating tasks. "
+                            "OMIT this field entirely for one-time tasks. "
+                            "Valid: 'daily', 'weekly', 'monthly'"
+                        )
                     }
                 },
-                "required": ["user_id", "title"]
+                "required": ["user_id", "title", "description", "due_date"]
             }
         ),
 
@@ -273,21 +299,35 @@ async def call_tool(name: str, arguments: dict) -> Sequence[TextContent]:
 
     try:
         # Tool 1: add_task (T-CHAT-004)
+        # FIXED: Proper handling of recurrence_pattern and description
         if name == "add_task":
             with Session(engine) as session:
-                task = Task(
-                    user_id=user_id,
-                    title=arguments["title"],
-                    description=arguments.get("description"),
-                    priority=arguments.get("priority", "none"),
-                    due_date=arguments.get("due_date"),
-                    tags=arguments.get("tags", []),
-                    recurrence_pattern=arguments.get("recurrence_pattern")
-                )
+                # Build task arguments safely
+                task_data = {
+                    "user_id": user_id,
+                    "title": arguments["title"],
+                    "description": arguments.get("description", arguments["title"]),  # Fallback to title
+                    "priority": arguments.get("priority", "none"),
+                    "tags": arguments.get("tags", [])
+                }
+
+                # Add due_date if provided
+                if arguments.get("due_date"):
+                    task_data["due_date"] = arguments["due_date"]
+
+                # CRITICAL FIX: Only add recurrence_pattern if it's a valid value
+                recurrence = arguments.get("recurrence_pattern")
+                if recurrence and recurrence in ["daily", "weekly", "monthly"]:
+                    task_data["recurrence_pattern"] = recurrence
+                    task_data["is_recurring"] = True
+                # Don't set recurrence_pattern if it's None, "none", or empty
+
+                task = Task(**task_data)
                 session.add(task)
                 session.commit()
                 session.refresh(task)
 
+                # Build response message
                 message = f"✅ Task created: '{task.title}' (ID: {task.id})"
                 if task.due_date:
                     message += f"\n📅 Due: {task.due_date}"
@@ -295,6 +335,8 @@ async def call_tool(name: str, arguments: dict) -> Sequence[TextContent]:
                     message += f"\n⚡ Priority: {task.priority}"
                 if task.tags:
                     message += f"\n🏷️ Tags: {', '.join(task.tags)}"
+                if task.recurrence_pattern:
+                    message += f"\n🔁 Recurring: {task.recurrence_pattern}"
 
                 return [TextContent(type="text", text=message)]
 
@@ -371,30 +413,32 @@ async def call_tool(name: str, arguments: dict) -> Sequence[TextContent]:
         # Tool 5: update_task (T-CHAT-008)
         elif name == "update_task":
             task_id = arguments["task_id"]
-            update_data = {}
-            if arguments.get("title"):
-                update_data["title"] = arguments["title"]
-            if arguments.get("description") is not None:
-                update_data["description"] = arguments["description"]
-            if arguments.get("priority"):
-                update_data["priority"] = arguments["priority"]
-            if arguments.get("due_date"):
-                update_data["due_date"] = arguments["due_date"]
-            if arguments.get("tags"):
-                update_data["tags"] = arguments["tags"]
+            with Session(engine) as session:
+                # Find task
+                task = session.get(Task, task_id)
+                if not task or task.user_id != user_id:
+                    return [TextContent(type="text", text=f"❌ Task {task_id} not found")]
 
-            async with httpx.AsyncClient() as client:
-                response = await client.put(
-                    f"{API_BASE}/api/{user_id}/tasks/{task_id}",
-                    json=update_data,
-                    timeout=10.0
-                )
-                response.raise_for_status()
-                result = response.json()
+                # Update fields if provided
+                if arguments.get("title"):
+                    task.title = arguments["title"]
+                if arguments.get("description") is not None:
+                    task.description = arguments["description"]
+                if arguments.get("priority"):
+                    task.priority = arguments["priority"]
+                if arguments.get("due_date"):
+                    task.due_date = arguments["due_date"]
+                if arguments.get("tags"):
+                    task.tags = arguments["tags"]
+
+                task.updated_at = datetime.utcnow()
+                session.add(task)
+                session.commit()
+                session.refresh(task)
 
                 return [TextContent(
                     type="text",
-                    text=f"✏️ Task '{result['title']}' updated successfully"
+                    text=f"✏️ Task '{task.title}' updated successfully"
                 )]
 
         # Tool 6: search_tasks (T-CHAT-009 - Bonus)
@@ -431,18 +475,21 @@ async def call_tool(name: str, arguments: dict) -> Sequence[TextContent]:
             task_id = arguments["task_id"]
             priority = arguments["priority"]
 
-            async with httpx.AsyncClient() as client:
-                response = await client.put(
-                    f"{API_BASE}/api/{user_id}/tasks/{task_id}",
-                    json={"priority": priority},
-                    timeout=10.0
-                )
-                response.raise_for_status()
-                result = response.json()
+            with Session(engine) as session:
+                # Find task
+                task = session.get(Task, task_id)
+                if not task or task.user_id != user_id:
+                    return [TextContent(type="text", text=f"❌ Task {task_id} not found")]
+
+                task.priority = priority
+                task.updated_at = datetime.utcnow()
+                session.add(task)
+                session.commit()
+                session.refresh(task)
 
                 return [TextContent(
                     type="text",
-                    text=f"⚡ Task '{result['title']}' priority set to {priority}"
+                    text=f"⚡ Task '{task.title}' priority set to {priority}"
                 )]
 
         # Tool 8: add_tags (T-CHAT-009 - Bonus)
@@ -450,31 +497,24 @@ async def call_tool(name: str, arguments: dict) -> Sequence[TextContent]:
             task_id = arguments["task_id"]
             new_tags = arguments["tags"]
 
-            # First get current task
-            async with httpx.AsyncClient() as client:
-                get_response = await client.get(
-                    f"{API_BASE}/api/{user_id}/tasks/{task_id}",
-                    timeout=10.0
-                )
-                get_response.raise_for_status()
-                task = get_response.json()
+            with Session(engine) as session:
+                # Find task
+                task = session.get(Task, task_id)
+                if not task or task.user_id != user_id:
+                    return [TextContent(type="text", text=f"❌ Task {task_id} not found")]
 
                 # Merge tags
-                current_tags = task.get('tags', [])
+                current_tags = task.tags or []
                 merged_tags = list(set(current_tags + new_tags))
-
-                # Update with merged tags
-                update_response = await client.put(
-                    f"{API_BASE}/api/{user_id}/tasks/{task_id}",
-                    json={"tags": merged_tags},
-                    timeout=10.0
-                )
-                update_response.raise_for_status()
-                result = update_response.json()
+                task.tags = merged_tags
+                task.updated_at = datetime.utcnow()
+                session.add(task)
+                session.commit()
+                session.refresh(task)
 
                 return [TextContent(
                     type="text",
-                    text=f"🏷️ Tags added to '{result['title']}': {', '.join(new_tags)}"
+                    text=f"🏷️ Tags added to '{task.title}': {', '.join(new_tags)}"
                 )]
 
         # Tool 9: schedule_reminder (T-CHAT-009 - Bonus)
