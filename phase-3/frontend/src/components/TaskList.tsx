@@ -191,8 +191,8 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
 
       {/* Stats Bar - Basic Filters */}
       <div className="relative bg-card/80 backdrop-blur-sm p-4 rounded-2xl mb-4 border-2 border-cyan-500/20">
-        <div className="flex flex-wrap gap-4 justify-between items-center">
-          <div className="flex gap-6 text-sm">
+        <div className="flex flex-col gap-4">
+          <div className="flex gap-4 sm:gap-6 text-xs sm:text-sm justify-center sm:justify-start">
             <span className="text-muted-foreground">
               Total: <span className="text-cyan-400 font-bold">{counts.total}</span>
             </span>
@@ -204,7 +204,7 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
             </span>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 justify-center sm:justify-end">
             {/* US6: Bulk Actions */}
             {selectedTaskIds.length > 0 && (
               <div className="flex gap-2 mr-2 pr-4 border-r border-cyan-500/20">
@@ -265,7 +265,7 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
                   : 'bg-background/50 border border-cyan-500/20 text-muted-foreground hover:text-cyan-400 hover:border-cyan-400'
               }`}
             >
-              ⚙️ Filters
+              Filters
             </button>
 
             {/* US2: Sort Order Toggle */}
