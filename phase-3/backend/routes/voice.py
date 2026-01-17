@@ -18,6 +18,17 @@ base_url = os.getenv("GROQ_BASE_URL") if os.getenv("GROQ_API_KEY") else None
 client = OpenAI(api_key=api_key, base_url=base_url)
 
 
+def _contains_devanagari(text: str) -> bool:
+    """Check if text contains Hindi Devanagari script (अ-ह)."""
+    if not text:
+        return False
+    # Devanagari Unicode range: U+0900 to U+097F
+    for char in text:
+        if '\u0900' <= char <= '\u097F':
+            return True
+    return False
+
+
 @router.post("/{user_id}/transcribe")
 async def transcribe_audio(
     user_id: str,
@@ -66,33 +77,58 @@ async def transcribe_audio(
             temp_audio.write(content)
             temp_audio_path = temp_audio.name
 
-        # 4. Transcribe using Whisper API (auto-detect language for Urdu support)
+        # 4. Transcribe using Whisper API with smart language detection
         with open(temp_audio_path, "rb") as audio_file:
-            # Check if using Groq or OpenAI
+            # First attempt: Auto-detect language
             if os.getenv("GROQ_API_KEY"):
                 # Groq Whisper API (whisper-large-v3)
-                # Omit language parameter to auto-detect (supports English + Urdu)
                 transcription = client.audio.transcriptions.create(
                     model="whisper-large-v3",
-                    file=audio_file
-                    # language parameter omitted for auto-detection
+                    file=audio_file,
+                    response_format="verbose_json"  # Get language info
                 )
             else:
                 # OpenAI Whisper API
-                # Omit language parameter to auto-detect (supports 97+ languages including Urdu)
                 transcription = client.audio.transcriptions.create(
                     model="whisper-1",
-                    file=audio_file
-                    # language parameter omitted for auto-detection
+                    file=audio_file,
+                    response_format="verbose_json"  # Get language info
                 )
+
+            detected_language = getattr(transcription, 'language', 'unknown')
+            transcribed_text = transcription.text
+
+            # If Hindi detected, retry with Urdu to get Arabic script
+            # Hindi and Urdu are the same spoken language but different scripts
+            if detected_language == 'hi' or _contains_devanagari(transcribed_text):
+                print(f"🔄 Hindi detected, retrying as Urdu for Arabic script...")
+                # Reopen file for retry
+                with open(temp_audio_path, "rb") as audio_file_retry:
+                    if os.getenv("GROQ_API_KEY"):
+                        transcription = client.audio.transcriptions.create(
+                            model="whisper-large-v3",
+                            file=audio_file_retry,
+                            language="ur",  # Force Urdu (Arabic script)
+                            prompt="اردو میں لکھیں"
+                        )
+                    else:
+                        transcription = client.audio.transcriptions.create(
+                            model="whisper-1",
+                            file=audio_file_retry,
+                            language="ur",  # Force Urdu (Arabic script)
+                            prompt="اردو میں لکھیں"
+                        )
+                detected_language = "ur"
+                transcribed_text = transcription.text
+                print(f"✅ Converted to Urdu: {transcribed_text[:50]}...")
 
         # 5. Clean up temp file
         os.unlink(temp_audio_path)
 
         # 6. Return transcription
         return {
-            "text": transcription.text,
-            "language": getattr(transcription, 'language', 'unknown')
+            "text": transcribed_text,
+            "language": detected_language
         }
 
     except Exception as e:

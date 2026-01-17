@@ -67,7 +67,7 @@ Real user ID (not demo-user-id) → Authentication working ✅
 ### 3. ✅ AI Agent (OpenAI Agents SDK + Groq)
 **Configuration:**
 ```env
-GROQ_API_KEY=gsk_3dF3epWSTKxL9coO...
+GROQ_API_KEY=gsk_xxx...  # Set in .env file (see .env.example)
 AI_MODEL=openai/gpt-oss-20b
 ```
 

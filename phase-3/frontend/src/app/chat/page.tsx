@@ -41,6 +41,7 @@ export default function ChatPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -49,6 +50,25 @@ export default function ChatPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Helper function to check if token is expired
+  const isTokenExpired = (token: string): boolean => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const exp = payload.exp * 1000; // Convert to milliseconds
+      return Date.now() >= exp;
+    } catch {
+      return true; // If can't decode, consider expired
+    }
+  };
+
+  // Helper function to handle authentication errors
+  const handleAuthError = () => {
+    console.error('Authentication failed - redirecting to login');
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    router.push('/login');
+  };
 
   // Load user session and conversations on mount
   useEffect(() => {
@@ -59,7 +79,15 @@ export default function ChatPage() {
 
       if (!storedToken || !storedUserId) {
         // Redirect to login if not authenticated
+        console.log('No token or userId found - redirecting to login');
         router.push('/login');
+        return;
+      }
+
+      // Check if token is expired
+      if (isTokenExpired(storedToken)) {
+        console.log('Token expired - redirecting to login');
+        handleAuthError();
         return;
       }
 
@@ -75,8 +103,14 @@ export default function ChatPage() {
           }
         );
         setConversations(response.data);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error loading conversations:', error);
+
+        // Handle 401 Unauthorized - token is invalid or expired
+        if (error.response?.status === 401) {
+          console.log('401 Unauthorized - token invalid');
+          handleAuthError();
+        }
       }
     };
 
@@ -162,6 +196,14 @@ export default function ChatPage() {
 
     } catch (error: any) {
       console.error('Error sending message:', error);
+
+      // Handle 401 Unauthorized - token is invalid or expired
+      if (error.response?.status === 401) {
+        console.log('401 Unauthorized - token invalid');
+        handleAuthError();
+        return;
+      }
+
       // Add error message
       setMessages(prev => [
         ...prev,
@@ -237,8 +279,16 @@ export default function ChatPage() {
       // Auto-send after transcription (optional)
       // await sendMessage();
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error transcribing audio:', error);
+
+      // Handle 401 Unauthorized - token is invalid or expired
+      if (error.response?.status === 401) {
+        console.log('401 Unauthorized - token invalid');
+        handleAuthError();
+        return;
+      }
+
       alert('Failed to transcribe audio. Please try again.');
     } finally {
       setIsLoading(false);
@@ -251,41 +301,75 @@ export default function ChatPage() {
     setMessages([]);
   };
 
+  // Toggle sidebar
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   return (
-    <div className="flex h-screen bg-[#0a0a0f] relative">
+    <div className="flex h-screen bg-[#0a0a0f] relative overflow-hidden">
       {/* Cyber Grid Background */}
       <div className="absolute inset-0 opacity-30" style={{
         backgroundImage: 'linear-gradient(to right, rgba(0, 217, 255, 0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 217, 255, 0.06) 1px, transparent 1px)',
         backgroundSize: '50px 50px'
       }} />
 
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-[rgba(15,23,42,0.95)] backdrop-blur-xl border-b border-[rgba(0,217,255,0.2)] p-3 flex items-center justify-between">
+        <button
+          onClick={toggleSidebar}
+          className="p-2 rounded-lg bg-[rgba(0,217,255,0.2)] text-[#00d9ff]"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <h1 className="text-lg font-bold bg-gradient-to-r from-[#00d9ff] to-[#d946ef] bg-clip-text text-transparent">
+          🤖 AI Assistant
+        </h1>
+        <div className="w-10" />
+      </div>
+
       {/* Sidebar - Conversations List */}
-      <div className="w-64 flex flex-col relative z-10 bg-[rgba(15,23,42,0.8)] backdrop-blur-xl border-r border-[rgba(0,217,255,0.2)]">
-        <div className="p-4 border-b border-[rgba(0,217,255,0.2)]">
+      <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'} fixed lg:relative z-40 lg:z-10 w-64 lg:w-64 md:w-72 h-full transition-transform duration-300 ease-in-out flex flex-col bg-[rgba(15,23,42,0.95)] lg:bg-[rgba(15,23,42,0.8)] backdrop-blur-xl border-r border-[rgba(0,217,255,0.2)] pt-16 lg:pt-0`}>
+        {/* Sidebar overlay for mobile */}
+        {sidebarOpen && (
+          <div
+            className="lg:hidden fixed inset-0 bg-black/50 z-[-1]"
+            onClick={toggleSidebar}
+          />
+        )}
+
+        <div className="p-4 border-b border-[rgba(0,217,255,0.2)] hidden lg:block">
           <button
             onClick={startNewConversation}
-            className="w-full px-4 py-2 bg-gradient-to-r from-[#00d9ff] to-[#d946ef] text-white rounded-lg hover:shadow-[0_0_20px_rgba(0,217,255,0.4)] transition-all flex items-center justify-center gap-2"
+            className="w-full px-4 py-2 bg-gradient-to-r from-[#00d9ff] to-[#d946ef] text-white rounded-lg hover:shadow-[0_0_20px_rgba(0,217,255,0.4)] transition-all flex items-center justify-center gap-2 text-sm"
           >
-            <MessageCircle size={20} />
+            <MessageCircle size={18} />
             New Chat
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-2">
-          <h3 className="px-2 text-sm font-semibold text-slate-400 mb-2">
+          <h3 className="px-2 text-xs sm:text-sm font-semibold text-slate-400 mb-2">
             Conversations
           </h3>
           {conversations.map(conv => (
             <button
               key={conv.id}
-              onClick={() => loadConversation(conv.id)}
-              className={`w-full text-left px-3 py-2 rounded-lg mb-1 transition-all hover:-translate-y-0.5 ${
+              onClick={() => {
+                loadConversation(conv.id);
+                if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                  setSidebarOpen(false);
+                }
+              }}
+              className={`w-full text-left px-3 py-2 rounded-lg mb-1 transition-all hover:-translate-y-0.5 text-xs sm:text-sm ${
                 conversationId === conv.id
                   ? 'bg-[#00d9ff]/20 text-[#00d9ff] border border-[#00d9ff]/50 shadow-[0_0_20px_rgba(0,217,255,0.3)]'
                   : 'text-slate-200 hover:bg-slate-700/50'
               }`}
             >
-              <div className="text-sm font-medium truncate">
+              <div className="font-medium truncate">
                 Conversation #{conv.id}
               </div>
               <div className="text-xs text-slate-400">
@@ -295,10 +379,10 @@ export default function ChatPage() {
           ))}
         </div>
 
-        <div className="p-4 border-t border-[rgba(0,217,255,0.2)]">
+        <div className="p-3 sm:p-4 border-t border-[rgba(0,217,255,0.2)]">
           <button
             onClick={() => router.push('/dashboard')}
-            className="w-full px-4 py-2 text-sm text-slate-200 hover:bg-slate-700/50 rounded-lg transition-all"
+            className="w-full px-3 sm:px-4 py-2 text-xs sm:text-sm text-slate-200 hover:bg-slate-700/50 rounded-lg transition-all flex items-center justify-center gap-2"
           >
             ← Back to Dashboard
           </button>
@@ -306,24 +390,24 @@ export default function ChatPage() {
       </div>
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col relative z-10">
+      <div className="flex-1 flex flex-col h-full relative z-10 pt-14 lg:pt-0">
         {/* Header */}
-        <div className="bg-[rgba(15,23,42,0.8)] backdrop-blur-xl border-b border-[rgba(0,217,255,0.2)] p-4">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-[#00d9ff] to-[#d946ef] bg-clip-text text-transparent">
+        <div className="hidden lg:block bg-[rgba(15,23,42,0.8)] backdrop-blur-xl border-b border-[rgba(0,217,255,0.2)] p-3 sm:p-4">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-[#00d9ff] to-[#d946ef] bg-clip-text text-transparent">
             🤖 Evolution Todo AI Assistant
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Manage your tasks using natural language in English or Urdu (اردو)
           </p>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
           {messages.length === 0 && (
-            <div className="text-center text-slate-400 mt-20">
-              <MessageCircle size={48} className="mx-auto mb-4 opacity-50 text-[#00d9ff] animate-pulse" />
-              <p className="text-lg font-medium text-slate-200">Start a conversation</p>
-              <p className="text-sm mt-2">
+            <div className="text-center text-slate-400 mt-10 sm:mt-20">
+              <MessageCircle size={36} className="mx-auto mb-3 sm:mb-4 opacity-50 text-[#00d9ff] animate-pulse" />
+              <p className="text-base sm:text-lg font-medium text-slate-200">Start a conversation</p>
+              <p className="text-xs sm:text-sm mt-2 px-4">
                 Try: "Add a task to buy groceries tomorrow" or "اپنی فہرست دکھائیں"
               </p>
             </div>
@@ -335,13 +419,13 @@ export default function ChatPage() {
               className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-2xl px-4 py-3 rounded-lg transition-all hover:-translate-y-1 ${
+                className={`max-w-[85%] sm:max-w-[75%] md:max-w-2xl px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-all hover:-translate-y-1 ${
                   message.role === 'user'
                     ? 'bg-gradient-to-r from-[#00d9ff] to-[#d946ef] text-white shadow-[0_0_20px_rgba(0,217,255,0.4)]'
                     : 'bg-[rgba(15,23,42,0.8)] backdrop-blur-xl text-slate-200 border border-[rgba(0,217,255,0.2)]'
                 }`}
               >
-                <div className="whitespace-pre-wrap">{message.content}</div>
+                <div className="whitespace-pre-wrap text-xs sm:text-sm">{message.content}</div>
                 {message.tool_calls && message.tool_calls.length > 0 && (
                   <div className="mt-2 pt-2 border-t border-[rgba(0,217,255,0.3)] text-xs opacity-75">
                     🔧 Tools used: {message.tool_calls.map(tc => tc.tool).join(', ')}
@@ -353,8 +437,8 @@ export default function ChatPage() {
 
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-[rgba(15,23,42,0.8)] backdrop-blur-xl px-4 py-3 rounded-lg border border-[rgba(0,217,255,0.2)]">
-                <Loader2 className="animate-spin text-[#00d9ff]" size={20} />
+              <div className="bg-[rgba(15,23,42,0.8)] backdrop-blur-xl px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-[rgba(0,217,255,0.2)]">
+                <Loader2 className="animate-spin text-[#00d9ff]" size={18} />
               </div>
             </div>
           )}
@@ -363,19 +447,19 @@ export default function ChatPage() {
         </div>
 
         {/* Input Area */}
-        <div className="bg-[rgba(15,23,42,0.8)] backdrop-blur-xl border-t border-[rgba(0,217,255,0.2)] p-4">
+        <div className="bg-[rgba(15,23,42,0.9)] backdrop-blur-xl border-t border-[rgba(0,217,255,0.2)] p-3 sm:p-4">
           <div className="flex gap-2">
             <button
               onClick={isRecording ? stopRecording : startRecording}
               disabled={isLoading}
-              className={`px-4 py-2 rounded-lg transition-all ${
+              className={`shrink-0 px-3 sm:px-4 py-2 rounded-lg transition-all ${
                 isRecording
                   ? 'bg-red-600 hover:bg-red-700 text-white shadow-[0_0_20px_rgba(217,70,239,0.4)]'
                   : 'bg-slate-700 hover:bg-[#00d9ff]/20 text-slate-200 hover:text-[#00d9ff]'
               } disabled:opacity-50 disabled:cursor-not-allowed`}
-              title={isRecording ? 'Stop recording (Voice Input - T-CHAT-015)' : 'Start recording'}
+              title={isRecording ? 'Stop recording' : 'Start recording'}
             >
-              {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
+              {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
             </button>
 
             <input
@@ -383,23 +467,23 @@ export default function ChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-              placeholder="Type your message in English or Urdu... اپنا پیغام لکھیں"
+              placeholder="Type your message..."
               disabled={isLoading}
-              className="flex-1 px-4 py-2 border border-[rgba(0,217,255,0.2)] rounded-lg bg-[rgba(15,23,42,0.6)] text-slate-200 placeholder-slate-400 focus:outline-none focus:border-[#00d9ff] focus:shadow-[0_0_15px_rgba(0,217,255,0.3)] transition-all disabled:opacity-50"
+              className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base border border-[rgba(0,217,255,0.2)] rounded-lg bg-[rgba(15,23,42,0.6)] text-slate-200 placeholder-slate-400 focus:outline-none focus:border-[#00d9ff] focus:shadow-[0_0_15px_rgba(0,217,255,0.3)] transition-all disabled:opacity-50"
             />
 
             <button
               onClick={sendMessage}
               disabled={isLoading || !input.trim()}
-              className="px-6 py-2 bg-gradient-to-r from-[#00d9ff] to-[#d946ef] text-white rounded-lg hover:shadow-[0_0_20px_rgba(0,217,255,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="shrink-0 px-4 sm:px-6 py-2 bg-gradient-to-r from-[#00d9ff] to-[#d946ef] text-white rounded-lg hover:shadow-[0_0_20px_rgba(0,217,255,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-sm"
             >
-              {isLoading ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
-              Send
+              {isLoading ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
+              <span className="hidden sm:inline">Send</span>
             </button>
           </div>
 
-          <div className="mt-2 text-xs text-slate-400 text-center">
-            🎤 Voice input supports English & Urdu • 🌐 Powered by GPT-4 • 💾 Stateless architecture
+          <div className="mt-2 text-[10px] sm:text-xs text-slate-400 text-center">
+            🎤 Voice input supports English & Urdu
           </div>
         </div>
       </div>

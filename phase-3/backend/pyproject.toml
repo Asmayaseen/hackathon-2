@@ -1,9 +1,10 @@
 [project]
 name = "evolution-todo-backend"
 version = "0.1.0"
-description = "Evolution Todo API - Phase 2 Hackathon"
+description = "Evolution Todo API - Phase 3 Hackathon - AI Chatbot"
 requires-python = ">=3.12"
 dependencies = [
+    # Core API
     "fastapi[standard]>=0.115.0",
     "passlib[bcrypt]>=1.7.4",
     "psycopg2-binary>=2.9.11",
@@ -11,4 +12,10 @@ dependencies = [
     "python-multipart>=0.0.21",
     "sqlmodel>=0.0.31",
     "python-dotenv>=1.0.0",
+
+    # Phase 3: AI Chatbot Dependencies (REQUIRED for Phase 3!)
+    "openai>=1.54.0",              # Official OpenAI Python SDK (Agents SDK)
+    "openai-chatkit>=0.1.0",       # Official OpenAI ChatKit (frontend protocol)
+    "mcp>=1.0.0",                  # Official Anthropic MCP SDK (tool calling)
+    "httpx>=0.27.0",               # Required for async HTTP calls in MCP tools
 ]

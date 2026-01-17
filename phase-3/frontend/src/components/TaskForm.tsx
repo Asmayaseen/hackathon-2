@@ -63,8 +63,8 @@ export default function TaskForm({ userId, onTaskAdded }: TaskFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative bg-card/80 backdrop-blur-sm p-6 rounded-2xl mb-6 border-2 border-cyan-500/20">
-      <div className="flex gap-3">
+    <form onSubmit={handleSubmit} className="relative bg-card/80 backdrop-blur-sm p-4 sm:p-6 rounded-2xl mb-6 border-2 border-cyan-500/20">
+      <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="text"
           value={title}
@@ -77,7 +77,7 @@ export default function TaskForm({ userId, onTaskAdded }: TaskFormProps) {
         <button
           type="button"
           onClick={() => setShowDescription(!showDescription)}
-          className={`px-4 py-3 rounded-xl border-2 transition-all ${
+          className={`sm:order-0 order-2 px-4 py-3 rounded-xl border-2 transition-all ${
             showDescription
               ? 'bg-fuchsia-500/20 border-fuchsia-500/50 text-fuchsia-400'
               : 'bg-background/50 border-cyan-500/30 text-muted-foreground hover:text-cyan-400 hover:border-cyan-400'
@@ -91,10 +91,10 @@ export default function TaskForm({ userId, onTaskAdded }: TaskFormProps) {
         <button
           type="submit"
           disabled={loading || !title.trim()}
-          className="relative group"
+          className="sm:order-1 order-1 relative group"
         >
           <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-fuchsia-500 rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-300" />
-          <div className="relative px-6 py-3 bg-gradient-to-r from-cyan-500 to-fuchsia-500 rounded-xl text-white font-bold uppercase tracking-wider border border-cyan-400/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+          <div className="relative px-4 sm:px-6 py-3 bg-gradient-to-r from-cyan-500 to-fuchsia-500 rounded-xl text-white font-bold uppercase tracking-wider border border-cyan-400/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[60px]">
             {loading ? (
               <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />

@@ -31,6 +31,7 @@ export default function LoginPage() {
         payload
       );
 
+
       // Store token and user info
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('userId', response.data.user.id);

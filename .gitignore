@@ -52,10 +52,14 @@ dmypy.json
 .DS_Store
 Thumbs.db
 
-# Environment variables
+# Environment variables (CRITICAL: Never commit these!)
 .env
 .env.*
 !.env.example
+!.env.*.example
+*.env.local
+*.env.production
+*.env.development
 
 # Logs
 *.log
