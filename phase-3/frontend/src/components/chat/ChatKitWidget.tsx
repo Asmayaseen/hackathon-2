@@ -34,6 +34,7 @@ export function ChatKitWidget() {
   // ChatKit hook with custom backend
   const chatkit = useChatKit({
     api: {
+      domainKey: 'custom',
       url: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/chatkit`,
       fetch: async (url, init) => {
         // Add JWT token to all requests
