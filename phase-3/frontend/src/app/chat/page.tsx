@@ -65,17 +65,17 @@ export default function ChatPage() {
   // Helper function to handle authentication errors
   const handleAuthError = () => {
     console.error('Authentication failed - redirecting to login');
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    router.push('/login');
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('user_id');
+    router.push('/auth/signin');
   };
 
   // Load user session and conversations on mount
   useEffect(() => {
     const loadSession = async () => {
       // Get token and user ID from localStorage (set during login)
-      const storedToken = localStorage.getItem('token');
-      const storedUserId = localStorage.getItem('userId');
+      const storedToken = localStorage.getItem('auth_token');
+      const storedUserId = localStorage.getItem('user_id');
 
       if (!storedToken || !storedUserId) {
         // Redirect to login if not authenticated

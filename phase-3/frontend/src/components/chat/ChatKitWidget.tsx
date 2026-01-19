@@ -21,8 +21,8 @@ export function ChatKitWidget() {
 
   // Load auth from localStorage
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUserId = localStorage.getItem('userId');
+    const storedToken = localStorage.getItem('auth_token');
+    const storedUserId = localStorage.getItem('user_id');
 
     if (storedToken && storedUserId) {
       setToken(storedToken);
@@ -38,8 +38,8 @@ export function ChatKitWidget() {
       url: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/chatkit`,
       fetch: async (url, init) => {
         // Add JWT token to all requests
-        const currentToken = localStorage.getItem('token');
-        const currentUserId = localStorage.getItem('userId');
+        const currentToken = localStorage.getItem('auth_token');
+        const currentUserId = localStorage.getItem('user_id');
 
         if (!currentToken) {
           throw new Error('Not authenticated');
