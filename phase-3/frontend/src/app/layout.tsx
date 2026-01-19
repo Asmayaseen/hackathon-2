@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { ThemeProvider } from "next-themes";
+import ChatKitWidget from "@/components/chat/ChatKitWidget";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,6 +28,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} antialiased`}>
+        {/* ChatKit CDN script for widget styling */}
+        <Script
+          src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
+          strategy="afterInteractive"
+        />
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
@@ -33,6 +40,8 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          {/* ChatKit Floating Widget - appears on all pages (bottom-right) */}
+          <ChatKitWidget />
         </ThemeProvider>
       </body>
     </html>
