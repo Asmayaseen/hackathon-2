@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Force Clear - Evolution Todo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+        }
+        h1 { font-size: 32px; margin-bottom: 20px; }
+        .btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+        }
+        .btn:hover { transform: scale(1.05); }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        .success { color: #4caf50; font-weight: bold; }
+        .code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Force Clear Storage</h1>
+        <div class="status" id="status">Ready to clear all tokens</div>
+
+        <button class="btn" onclick="forceClear()">🗑️ CLEAR EVERYTHING</button>
+        <button class="btn" onclick="window.location.href='/login'">🔑 Go to Login</button>
+
+        <div class="code">
+            <strong>Credentials:</strong><br>
+            Email: asmayaseen9960@gmail.com<br>
+            Password: Evolution@123
+        </div>
+
+        <div id="details" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        // Auto-clear on page load
+        window.onload = function() {
+            showCurrentStorage();
+        };
+
+        function showCurrentStorage() {
+            const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('userId');
+            const details = document.getElementById('details');
+
+            if (token || userId) {
+                details.innerHTML = `
+                    <div style="background: rgba(255, 193, 7, 0.3); padding: 15px; border-radius: 8px; font-size: 14px;">
+                        ⚠️ <strong>Old tokens found!</strong><br>
+                        Token: ${token ? token.substring(0, 30) + '...' : 'None'}<br>
+                        UserId: ${userId || 'None'}<br><br>
+                        Click "CLEAR EVERYTHING" button!
+                    </div>
+                `;
+            } else {
+                details.innerHTML = `
+                    <div style="background: rgba(76, 175, 80, 0.3); padding: 15px; border-radius: 8px; font-size: 14px;">
+                        ✅ <strong>Storage is clean!</strong><br>
+                        No old tokens found.<br><br>
+                        Click "Go to Login" to sign in.
+                    </div>
+                `;
+            }
+        }
+
+        async function forceClear() {
+            const statusEl = document.getElementById('status');
+
+            try {
+                statusEl.innerHTML = '🔄 Clearing...';
+
+                // Step 1: Clear localStorage
+                localStorage.clear();
+                await sleep(200);
+
+                // Step 2: Clear sessionStorage
+                sessionStorage.clear();
+                await sleep(200);
+
+                // Step 3: Clear all cookies
+                const cookies = document.cookie.split(";");
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i];
+                    const eqPos = cookie.indexOf("=");
+                    const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                }
+                await sleep(200);
+
+                // Step 4: Clear IndexedDB
+                if (window.indexedDB) {
+                    try {
+                        const dbs = await indexedDB.databases();
+                        for (const db of dbs) {
+                            indexedDB.deleteDatabase(db.name);
+                        }
+                    } catch (e) {
+                        console.log('IndexedDB clear skipped');
+                    }
+                }
+                await sleep(200);
+
+                // Step 5: Clear Cache
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(
+                        cacheNames.map(name => caches.delete(name))
+                    );
+                }
+                await sleep(200);
+
+                // Verify
+                const stillHasToken = localStorage.getItem('token');
+                const stillHasUserId = localStorage.getItem('userId');
+
+                if (!stillHasToken && !stillHasUserId) {
+                    statusEl.innerHTML = '<span class="success">✅ ALL CLEARED!</span>';
+                    showCurrentStorage();
+
+                    // Auto-redirect after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else {
+                    statusEl.innerHTML = '⚠️ Some items remain - Try browser incognito mode';
+                }
+
+            } catch (error) {
+                statusEl.innerHTML = '❌ Error: ' + error.message;
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>

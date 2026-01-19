@@ -1,0 +1,56 @@
+# Development Environment Values
+# Use: helm install todo-app ./helm/todo-app -f ./helm/todo-app/values-dev.yaml
+
+# Backend Configuration
+backend:
+  replicaCount: 1
+  image:
+    repository: todo-backend
+    tag: "dev"
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+
+# Frontend Configuration
+frontend:
+  replicaCount: 1
+  image:
+    repository: todo-frontend
+    tag: "dev"
+    pullPolicy: Always
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+
+# Secrets (use environment variables or external secret management)
+secrets:
+  DATABASE_URL: ""
+  BETTER_AUTH_SECRET: ""
+  OPENAI_API_KEY: ""
+  GROQ_API_KEY: ""
+
+# Ingress - disabled for dev
+ingress:
+  enabled: false
+  className: nginx
+  host: todo-dev.local
+
+# Debug settings
+debug:
+  enabled: true
+  logLevel: "debug"

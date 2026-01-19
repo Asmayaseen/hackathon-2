@@ -1,0 +1,56 @@
+# Default values for todo-app.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+backend:
+  replicaCount: 1
+  image:
+    repository: todo-backend
+    pullPolicy: Never # Local Minikube
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+frontend:
+  replicaCount: 1
+  image:
+    repository: todo-frontend
+    pullPolicy: Never # Local Minikube
+    tag: "latest"
+  service:
+    type: NodePort # Or LoadBalancer for Minikube tunnel
+    port: 3000
+    nodePort: 30000
+  resources:
+    limits:
+      cpu: 100m
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+env:
+  # ConfigMap variables
+  ENVIRONMENT: "development"
+
+secrets:
+  # Secrets will be provided manually or via values-local.yaml
+  DATABASE_URL: ""
+  BETTER_AUTH_SECRET: ""
+  OPENAI_API_KEY: ""
+  GROQ_API_KEY: ""
+
+ingress:
+  enabled: false
+  className: nginx
+  host: todo.local
+  annotations: {}
+  tls: []
