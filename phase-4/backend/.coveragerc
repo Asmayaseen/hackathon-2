@@ -1,0 +1,66 @@
+[run]
+# Coverage configuration for Evolution Todo backend
+
+source = .
+omit =
+    # Test files
+    tests/*
+    */tests/*
+    # Virtual environment
+    venv/*
+    */venv/*
+    .venv/*
+    */.venv/*
+    # Migrations
+    migrations/*
+    migrate.py
+    run_migration.py
+    # Development/testing utilities
+    test_*.py
+    *_test.py
+    chatkit_server.py
+    chatkit_store.py
+    # Configuration files
+    conftest.py
+    # Main entry point (covered by API tests)
+    main.py
+
+[report]
+# Coverage reporting configuration
+precision = 2
+show_missing = true
+skip_covered = false
+skip_empty = false
+
+# Fail if coverage is below threshold
+fail_under = 80
+
+exclude_lines =
+    # Standard pragmas
+    pragma: no cover
+
+    # Debug-only code
+    def __repr__
+    if self\.debug
+
+    # Defensive programming
+    raise AssertionError
+    raise NotImplementedError
+
+    # Type checking
+    if TYPE_CHECKING:
+    if typing.TYPE_CHECKING:
+    @overload
+
+    # Abstract methods
+    @abstractmethod
+    @abc.abstractmethod
+
+    # Main execution
+    if __name__ == .__main__.:
+
+    # Ellipsis for stub implementations
+    \.\.\.
+
+[html]
+directory = htmlcov

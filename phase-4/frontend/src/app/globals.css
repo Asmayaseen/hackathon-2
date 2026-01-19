@@ -1,0 +1,231 @@
+@import "tailwindcss";
+
+/* Browser Compatibility - Vendor Prefixes */
+* {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  user-select: text;
+}
+
+button, a, .btn-cyber {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+/* Backdrop filter with vendor prefix for Safari */
+.glass, [class*="backdrop-blur"] {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* Light Mode Variables */
+:root {
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #f8fafc;
+  --card-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --border: #e2e8f0;
+
+  /* Brand Colors */
+  --cyan-primary: #00d9ff;
+  --fuchsia-primary: #d946ef;
+  --purple-primary: #8B5CF6;
+  --blue-secondary: #3B82F6;
+
+  /* Priority Colors (T008) */
+  --priority-high: #EF4444;      /* Red */
+  --priority-medium: #F59E0B;    /* Yellow/Amber */
+  --priority-low: #10B981;       /* Green */
+  --priority-none: #6B7280;      /* Gray */
+}
+
+/* Dark Mode Variables */
+.dark {
+  --background: #0a0a0f;
+  --foreground: #f8fafc;
+  --card: rgba(15, 23, 42, 0.8);
+  --card-foreground: #f8fafc;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --border: rgba(0, 217, 255, 0.2);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+
+  /* Brand Colors */
+  --color-cyan-primary: var(--cyan-primary);
+  --color-fuchsia-primary: var(--fuchsia-primary);
+  --color-purple-primary: var(--purple-primary);
+  --color-blue-secondary: var(--blue-secondary);
+
+  /* Priority Colors (T008) */
+  --color-priority-high: var(--priority-high);
+  --color-priority-medium: var(--priority-medium);
+  --color-priority-low: var(--priority-low);
+  --color-priority-none: var(--priority-none);
+
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Glassmorphism utility class */
+.glass {
+  background: rgba(30, 41, 59, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .glass {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(0, 217, 255, 0.1);
+}
+
+/* Gradient background utility */
+.bg-gradient-primary {
+  background: linear-gradient(135deg, #8B5CF6 0%, #3B82F6 100%);
+}
+
+.bg-gradient-cyber {
+  background: linear-gradient(135deg, #00d9ff 0%, #d946ef 100%);
+}
+
+/* Neon glow effects */
+.neon-glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 217, 255, 0.4), 0 0 40px rgba(0, 217, 255, 0.2);
+}
+
+.neon-glow-fuchsia {
+  box-shadow: 0 0 20px rgba(217, 70, 239, 0.4), 0 0 40px rgba(217, 70, 239, 0.2);
+}
+
+/* Cyber grid background for dark mode */
+.cyber-grid {
+  background-image:
+    linear-gradient(to right, rgba(0, 217, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 217, 255, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.dark .cyber-grid {
+  background-image:
+    linear-gradient(to right, rgba(0, 217, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 217, 255, 0.06) 1px, transparent 1px);
+}
+
+/* Custom scrollbar styles */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #475569 transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #475569;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b;
+}
+
+/* Animation utilities */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Button hover effects */
+.btn-cyber {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.btn-cyber::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.btn-cyber:hover::before {
+  left: 100%;
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+}
+
+.dark .card-hover:hover {
+  box-shadow: 0 0 30px rgba(0, 217, 255, 0.2);
+}
+
+/* Input focus styles */
+.input-cyber {
+  transition: all 0.3s ease;
+}
+
+.input-cyber:focus {
+  outline: none;
+  border-color: var(--cyan-primary);
+  box-shadow: 0 0 0 3px rgba(0, 217, 255, 0.1);
+}
+
+.dark .input-cyber:focus {
+  box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
+}

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  ENVIRONMENT: {{ .Values.env.ENVIRONMENT | quote }}
+  BACKEND_URL: "http://{{ .Release.Name }}-backend:{{ .Values.backend.service.port }}"
+  CORS_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://127.0.0.1:39067,http://127.0.0.1:30000,*"

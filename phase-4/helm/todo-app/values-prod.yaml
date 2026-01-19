@@ -1,0 +1,75 @@
+# Production Environment Values
+# Use: helm install todo-app ./helm/todo-app -f ./helm/todo-app/values-prod.yaml
+
+# Backend Configuration
+backend:
+  replicaCount: 3
+  image:
+    repository: todo-backend
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+    requests:
+      cpu: "500m"
+      memory: "512Mi"
+
+# Frontend Configuration
+frontend:
+  replicaCount: 2
+  image:
+    repository: todo-frontend
+    tag: "1.0.0"
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+
+# Secrets (must be provided via external secret management)
+secrets:
+  DATABASE_URL: ""
+  BETTER_AUTH_SECRET: ""
+  OPENAI_API_KEY: ""
+  GROQ_API_KEY: ""
+
+# Ingress - enabled for production
+ingress:
+  enabled: true
+  className: nginx
+  host: todo.yourdomain.com
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  tls:
+    - secretName: todo-tls
+      hosts:
+        - todo.yourdomain.com
+
+# Production settings
+debug:
+  enabled: false
+  logLevel: "info"
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Horizontal Pod Autoscaler
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
