@@ -21,7 +21,7 @@ from tool_validation import (
 )
 
 # Configure client for OpenAI or Groq
-# Priority: GROQ_API_KEY > OPENAI_API_KEY
+# Priority: GROQ_API_KEY > OPENAI_API_KEY (Groq is FREE!)
 if os.getenv("GROQ_API_KEY"):
     api_key = os.getenv("GROQ_API_KEY")
     base_url = "https://api.groq.com/openai/v1"
@@ -30,7 +30,7 @@ if os.getenv("GROQ_API_KEY"):
 elif os.getenv("OPENAI_API_KEY"):
     api_key = os.getenv("OPENAI_API_KEY")
     base_url = None
-    model_name = os.getenv("OPENAI_MODEL", "gpt-4o")
+    model_name = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     print(f"🔧 Using OpenAI API with model: {model_name}")
 else:
     raise ValueError("Either OPENAI_API_KEY or GROQ_API_KEY must be set")

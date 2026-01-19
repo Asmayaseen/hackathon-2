@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Login - Evolution Todo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .btn:hover { opacity: 0.9; }
+        .result {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: white;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Login API</h1>
+
+    <div>
+        <h3>Credentials:</h3>
+        <input type="email" id="email" value="asmayaseen9960@gmail.com" placeholder="Email">
+        <input type="password" id="password" value="Evolution@123" placeholder="Password">
+    </div>
+
+    <button class="btn" onclick="testBackend()">🔍 Test Backend Direct</button>
+    <button class="btn" onclick="testFrontendLogin()">🌐 Test Frontend Login</button>
+    <button class="btn" onclick="clearStorage()">🗑️ Clear Storage</button>
+
+    <div class="result" id="result">Click a button to test...</div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+
+        async function testBackend() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const result = document.getElementById('result');
+
+            result.innerHTML = '🔄 Testing backend directly...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/signin`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    result.innerHTML = `
+                        <div class="success">✅ Backend Login Successful!</div>
+                        <br><strong>Token:</strong> ${data.token.substring(0, 50)}...
+                        <br><strong>User:</strong> ${data.user.name} (${data.user.email})
+                        <br><strong>User ID:</strong> ${data.user.id}
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <div class="error">❌ Backend Error</div>
+                        <br><strong>Status:</strong> ${response.status}
+                        <br><strong>Error:</strong> ${data.detail || 'Unknown error'}
+                    `;
+                }
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="error">❌ Network Error</div>
+                    <br><strong>Error:</strong> ${error.message}
+                    <br><br>Is backend running on port 8000?
+                `;
+            }
+        }
+
+        async function testFrontendLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const result = document.getElementById('result');
+
+            result.innerHTML = '🔄 Testing frontend login...';
+
+            try {
+                // This simulates what the frontend login page does
+                const response = await fetch(`${API_URL}/api/auth/signin`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Store in localStorage like the real login page
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userId', data.user.id);
+                    localStorage.setItem('userName', data.user.name);
+                    localStorage.setItem('userEmail', data.user.email);
+
+                    result.innerHTML = `
+                        <div class="success">✅ Login Successful + Stored!</div>
+                        <br><strong>Token:</strong> Stored in localStorage
+                        <br><strong>User:</strong> ${data.user.name}
+                        <br><br>You can now visit:
+                        <br><a href="/dashboard" style="color: #00d9ff;">/dashboard</a>
+                        <br><a href="/chat" style="color: #00d9ff;">/chat</a>
+                    `;
+                } else {
+                    result.innerHTML = `
+                        <div class="error">❌ Login Failed</div>
+                        <br><strong>Status:</strong> ${response.status}
+                        <br><strong>Error:</strong> ${data.detail || 'Unknown error'}
+                    `;
+                }
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="error">❌ Error</div>
+                    <br><strong>Error:</strong> ${error.message}
+                `;
+            }
+        }
+
+        function clearStorage() {
+            localStorage.clear();
+            sessionStorage.clear();
+            document.getElementById('result').innerHTML = '✅ Storage cleared!';
+        }
+    </script>
+</body>
+</html>

@@ -1,19 +1,20 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: [NEW] → 1.0.0
-This is the initial constitution for the Evolution of Todo hackathon project.
+Version change: 1.0.0 → 1.1.0
+Added new principle for Phase IV Kubernetes deployment requirements.
 
 Added sections:
-- Core Principles (7 principles defined)
-- Technology Stack Requirements
-- Development Workflow
-- Governance
+- Principle VIII: Cloud-Native Architecture (Kubernetes-specific requirements)
+- Kubernetes Architecture Requirements (under Technology Stack Requirements)
+
+Modified sections:
+- Updated Phase IV technology stack details for clarity
 
 Templates requiring updates:
-✅ plan-template.md - Constitution Check section aligns with principles
-✅ spec-template.md - User scenarios and requirements align with spec-driven approach
-✅ tasks-template.md - Task structure supports independent testing and TDD when required
+✅ plan-template.md - Constitution Check section aligns with new cloud-native principle
+✅ spec-template.md - User scenarios support container/K8s deployment stories
+✅ tasks-template.md - Task structure supports containerization and deployment tasks
 
 Follow-up TODOs: None
 -->
@@ -74,13 +75,19 @@ The following technology stack is mandatory and MUST NOT be substituted:
 - MCP Server: Official MCP SDK
 - Database: Same as Phase II (Neon)
 
-**Phase IV & V:**
+**Phase IV:**
 - Containerization: Docker (Docker Desktop with Gordon AI Agent)
-- Orchestration: Kubernetes (Minikube local, DOKS/GKE/AKS cloud)
+- Container Registry: Local (Minikube registry) or Docker Hub
+- Orchestration: Kubernetes (Minikube for local development)
 - Package Manager: Helm Charts
 - AI DevOps: kubectl-ai, kagent
-- Event Streaming (Phase V): Kafka (Redpanda Cloud or Strimzi self-hosted)
-- Application Runtime (Phase V): Dapr
+- Application: Phase III Todo Chatbot (containerized)
+
+**Phase V:**
+- Cloud Kubernetes: DOKS (DigitalOcean), GKE (Google), or AKS (Azure)
+- Event Streaming: Kafka (Redpanda Cloud or Strimzi self-hosted)
+- Application Runtime: Dapr (distributed application runtime)
+- CI/CD: GitHub Actions
 
 Additional tools and libraries may be added but core stack MUST remain as specified.
 
@@ -154,6 +161,40 @@ Code files MUST include comments linking to Task IDs and relevant spec sections.
 **Rationale**: Ensures traceability from requirements through implementation, enables
 knowledge transfer, and provides learning artifacts for hackathon evaluation.
 
+### VIII. Cloud-Native Architecture (Phase IV+)
+
+All containerized services MUST follow cloud-native principles:
+
+**Container Standards:**
+- All services MUST be containerized using Docker with multi-stage builds
+- Dockerfiles MUST use official base images and follow security best practices
+- Container images MUST be tagged with semantic versions (not :latest in production)
+- Health checks MUST be implemented for all containers
+- Containers MUST be stateless; persistent data via external volumes/databases
+
+**Kubernetes Deployment:**
+- All deployments MUST use Helm charts for package management
+- Services MUST define resource limits (CPU, memory) for all containers
+- Liveness and readiness probes MUST be configured
+- ConfigMaps MUST be used for non-sensitive configuration
+- Secrets MUST be used for sensitive data (API keys, credentials)
+- Services MUST be exposed via Kubernetes Service resources
+
+**AI-Assisted DevOps:**
+- Docker operations MAY use Gordon AI Agent for assistance
+- Kubernetes operations SHOULD use kubectl-ai for natural language commands
+- Cluster analysis MAY use kagent for intelligent operations
+- All AI-generated manifests MUST be reviewed before applying
+
+**Environment Parity:**
+- Local Minikube deployment MUST match cloud deployment configuration
+- Environment-specific values MUST be externalized via Helm values files
+- Development, staging, and production MUST use identical container images
+
+**Rationale**: Ensures production-ready containerization and Kubernetes deployment patterns.
+AI-assisted DevOps tools accelerate learning while maintaining human oversight.
+Environment parity prevents "works on my machine" issues.
+
 ## Technology Stack Requirements
 
 ### Mandatory Technologies by Phase
@@ -168,6 +209,39 @@ The MCP server MUST:
 - Implement tools: add_task, list_tasks, complete_task, delete_task, update_task
 - Accept user_id parameter for all operations to ensure data isolation
 - Return structured responses with task_id, status, and title
+
+### Kubernetes Architecture (Phase IV+)
+
+The Kubernetes deployment MUST include:
+
+**Core Components:**
+- Frontend Deployment (Next.js container, 1-3 replicas)
+- Backend Deployment (FastAPI container, 1-3 replicas)
+- Ingress Controller for external traffic routing
+- Persistent storage configuration for any required volumes
+
+**Helm Chart Structure:**
+```
+helm/
+├── Chart.yaml              # Chart metadata
+├── values.yaml             # Default configuration values
+├── values-dev.yaml         # Development overrides
+├── values-prod.yaml        # Production overrides
+├── templates/
+│   ├── frontend-deployment.yaml
+│   ├── frontend-service.yaml
+│   ├── backend-deployment.yaml
+│   ├── backend-service.yaml
+│   ├── configmap.yaml
+│   ├── secrets.yaml
+│   └── ingress.yaml
+```
+
+**Required Labels:**
+- app.kubernetes.io/name: Application name
+- app.kubernetes.io/version: Application version
+- app.kubernetes.io/component: Component type (frontend/backend)
+- app.kubernetes.io/part-of: System name (evolution-todo)
 
 ### Event-Driven Architecture (Phase V)
 
@@ -220,7 +294,7 @@ Dapr building blocks MUST be used for:
 
 - Commits MUST be created when explicitly requested by user
 - Commit messages MUST end with: "🤖 Generated with [Claude Code](https://claude.com/claude-code)"
-- Co-authored by: "Claude Sonnet 4.5 <noreply@anthropic.com>"
+- Co-authored by: "Claude Opus 4.5 <noreply@anthropic.com>"
 - Pull requests MUST include summary and test plan
 - Each phase MUST be deployable and demonstrable independently
 
@@ -234,6 +308,12 @@ Each phase submission MUST include:
 - Deployed application links (Vercel for frontend, Phase III+ for chatbot)
 - Demo video (maximum 90 seconds)
 - WhatsApp number for presentation invitation
+
+**Phase IV Additional Requirements:**
+- Dockerfile for frontend and backend
+- Helm charts in /helm directory
+- Minikube deployment instructions in README
+- kubectl commands documented for verification
 
 ## Governance
 
@@ -264,4 +344,4 @@ For runtime development guidance and agent-specific instructions, refer to CLAUD
 For project-specific implementation patterns, refer to phase-specific documentation
 in specs/*/plan.md files.
 
-**Version**: 1.0.0 | **Ratified**: 2025-12-24 | **Last Amended**: 2025-12-24
+**Version**: 1.1.0 | **Ratified**: 2025-12-24 | **Last Amended**: 2026-01-16

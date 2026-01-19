@@ -23,7 +23,7 @@ Require MCP servers for functionality.
 | `fetching-library-docs` | "how do I use [library]", "React hooks docs" | context7 |
 | `researching-with-deepwiki` | "how does [repo] work internally" | deepwiki |
 
-### Infrastructure (3)
+### Infrastructure (4)
 Container and Kubernetes workflows.
 
 | Skill | Trigger | Key Value |
@@ -31,6 +31,7 @@ Container and Kubernetes workflows.
 | `containerizing-applications` | "dockerize", "helm chart", "docker-compose" | 15+ Docker gotchas |
 | `operating-k8s-local` | "minikube", "local kubernetes", "kubectl" | Local dev patterns |
 | `deploying-cloud-k8s` | "deploy to AKS/GKE", "CI/CD pipeline" | Build-time vs runtime vars |
+| `cloud-native-k8s-blueprint` | "deploy to minikube", "helm deploy", "kubectl-ai" | Helm templates, AIOps |
 
 ### Application (4)
 Full-stack application patterns.
@@ -51,6 +52,15 @@ Chat interfaces and styling.
 | `building-chat-interfaces` | "chat UI", "message list", "AI chat" | Streaming, markdown |
 | `building-chat-widgets` | "chat widget", "embeddable chat" | Widget architecture |
 | `streaming-llm-responses` | "stream response", "SSE", "real-time" | Token streaming |
+
+### ChatKit (3)
+OpenAI ChatKit integration patterns.
+
+| Skill | Trigger | Key Value |
+|-------|---------|-----------|
+| `ai.chatkit.backend` | "ChatKit backend", "Agents SDK", "chatbot server" | FastAPI + OpenAI patterns |
+| `ai.chatkit.frontend` | "ChatKit widget", "chat component", "embed ChatKit" | CDN script, useChatKit |
+| `ai.chatkit.widgets` | "ChatKit widgets", "interactive elements" | Widget patterns |
 
 ### Development Practices (2)
 Debugging, SRE, and production operations.

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear All Tokens - Evolution Todo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        h1 {
+            margin-top: 0;
+            font-size: 28px;
+            text-align: center;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .clear-btn {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .clear-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+        }
+        .login-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 242, 254, 0.4);
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            text-align: center;
+            font-size: 14px;
+        }
+        .info {
+            background: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .success {
+            background: rgba(76, 175, 80, 0.2);
+            border-left: 4px solid #4caf50;
+        }
+        code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Clear All Tokens</h1>
+
+        <div class="info">
+            <strong>⚠️ Why is this needed?</strong><br>
+            JWT_SECRET was changed on the backend. All old tokens are now invalid and must be cleared.
+        </div>
+
+        <div class="status" id="status">
+            Current tokens in storage: <span id="tokenCount">Checking...</span>
+        </div>
+
+        <button class="clear-btn" onclick="clearEverything()">
+            🗑️ Clear All Storage & Tokens
+        </button>
+
+        <button class="login-btn" onclick="goToLogin()">
+            🔑 Go to Login Page
+        </button>
+
+        <div class="info" style="margin-top: 20px; font-size: 13px;">
+            <strong>📋 What will be cleared:</strong><br>
+            • localStorage (token, userId)<br>
+            • sessionStorage<br>
+            • All cookies<br>
+            • IndexedDB storage<br>
+            • Cache storage
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function checkTokens() {
+            const token = localStorage.getItem('token');
+            const userId = localStorage.getItem('userId');
+            const count = (token ? 1 : 0) + (userId ? 1 : 0);
+
+            document.getElementById('tokenCount').textContent = count > 0
+                ? `${count} item(s) found`
+                : 'None (already cleared)';
+        }
+
+        function clearEverything() {
+            const result = document.getElementById('result');
+            result.innerHTML = '<div class="info">🔄 Clearing all storage...</div>';
+
+            try {
+                // Clear localStorage
+                localStorage.clear();
+                console.log('✅ localStorage cleared');
+
+                // Clear sessionStorage
+                sessionStorage.clear();
+                console.log('✅ sessionStorage cleared');
+
+                // Clear all cookies
+                document.cookie.split(";").forEach(function(c) {
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                });
+                console.log('✅ Cookies cleared');
+
+                // Clear IndexedDB
+                if (window.indexedDB) {
+                    indexedDB.databases().then(dbs => {
+                        dbs.forEach(db => indexedDB.deleteDatabase(db.name));
+                    }).catch(() => {});
+                }
+
+                // Clear Cache Storage
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => caches.delete(name));
+                    });
+                }
+
+                result.innerHTML = `
+                    <div class="info success">
+                        ✅ <strong>All storage cleared successfully!</strong><br><br>
+                        Next steps:<br>
+                        1. Click "Go to Login Page" button<br>
+                        2. Login with your credentials<br>
+                        3. New token will be generated<br>
+                        4. All 401 errors will be gone!
+                    </div>
+                `;
+
+                checkTokens();
+            } catch (error) {
+                result.innerHTML = `
+                    <div class="info" style="border-left-color: #f44336;">
+                        ❌ Error: ${error.message}<br>
+                        Try clearing manually using browser DevTools.
+                    </div>
+                `;
+            }
+        }
+
+        function goToLogin() {
+            window.location.href = 'http://localhost:3000/login';
+        }
+
+        // Check tokens on page load
+        checkTokens();
+    </script>
+</body>
+</html>

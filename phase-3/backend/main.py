@@ -68,6 +68,30 @@ def root():
     }
 
 
+@app.get("/health")
+def health_check():
+    """Health check endpoint for Kubernetes liveness/readiness probes."""
+    return {
+        "status": "healthy",
+        "service": "evolution-todo-api",
+        "version": "1.0.0"
+    }
+
+
+@app.get("/ready")
+def readiness_check():
+    """Readiness check - verifies database connectivity."""
+    try:
+        from db import engine
+        from sqlmodel import text
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return {"status": "ready", "database": "connected"}
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=503, detail=f"Database not ready: {str(e)}")
+
+
 # Import and include routers
 from routes.tasks import router as tasks_router
 from routes.auth import router as auth_router
