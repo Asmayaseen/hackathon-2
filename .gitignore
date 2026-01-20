@@ -92,3 +92,8 @@ package-lock.json
 yarn.lock
 pnpm-lock.yaml
 .env*.local
+
+# Kubernetes/Docker binaries (downloaded)
+kubectl
+minikube*
+get-docker.sh
