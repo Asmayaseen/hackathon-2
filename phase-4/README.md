@@ -1,95 +1,193 @@
 # Phase 4: Local Kubernetes Deployment
 
-This phase moves the Todo Chatbot application to a local Kubernetes cluster using Minikube and Helm.
+Evolution Todo App - Local Kubernetes deployment using Docker, Minikube, and Helm.
 
 ## Prerequisites
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (with WSL 2 backend on Windows)
-- [Minikube](https://minikube.sigs.k8s.io/docs/start/)
-- [Helm](https://helm.sh/docs/intro/install/)
-- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- Docker Desktop (or Docker Engine)
+- Minikube
+- kubectl
+- Helm 3
 
-## Directory Structure
-
-- `backend/`: FastAPI backend (containerized)
-- `frontend/`: Next.js frontend (containerized)
-- `helm/`: Helm chart for deployment
-
-## Setup & Deployment
-
-### 1. Start Minikube
+### Install Prerequisites (Ubuntu/WSL2)
 
 ```bash
-minikube start
+# Minikube
+curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64
+sudo install minikube-linux-amd64 /usr/local/bin/minikube
+
+# kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install kubectl /usr/local/bin/kubectl
+
+# Helm
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 ```
 
-### 2. Build Docker Images
+## Quick Start
 
-Point your shell to Minikube's Docker daemon so it can see the images we build:
+### 1. Set Environment Variables
 
 ```bash
+# Required - Your Neon DB URL
+export DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
+
+# Required - JWT Secret (same as BETTER_AUTH_SECRET)
+export JWT_SECRET="your-jwt-secret-here"
+
+# Optional - For AI Chatbot
+export GROQ_API_KEY="your-groq-api-key"  # Free at console.groq.com
+```
+
+### 2. Run Deployment Script
+
+```bash
+cd phase-4
+./deploy-local.sh
+```
+
+This script will:
+1. Start Minikube cluster
+2. Build Docker images
+3. Deploy with Helm
+4. Show access URLs
+
+### 3. Access the Application
+
+```bash
+# Port forward to access locally
+kubectl port-forward svc/todo-app-backend 8000:8000 &
+kubectl port-forward svc/todo-app-frontend 3000:3000 &
+
+# Open in browser
+xdg-open http://localhost:3000
+```
+
+## Manual Deployment Steps
+
+### Step 1: Start Minikube
+
+```bash
+minikube start --cpus=4 --memory=8192 --driver=docker
+minikube addons enable ingress
+minikube addons enable metrics-server
+
+# Point Docker to Minikube
 eval $(minikube docker-env)
 ```
 
-Build the images:
+### Step 2: Build Docker Images
 
 ```bash
-./build_images.sh
-# Or manually:
-# docker build -t todo-backend:latest ./backend
-# docker build -t todo-frontend:latest ./frontend
+# Build backend
+docker build -t todo-backend:latest -f backend/Dockerfile ../phase-3/backend/
+
+# Build frontend (need to update next.config.ts for standalone)
+docker build \
+  --build-arg NEXT_PUBLIC_API_URL=http://todo-app-backend:8000 \
+  -t todo-frontend:latest \
+  -f frontend/Dockerfile ../phase-3/frontend/
 ```
 
-### 3. Deploy with Helm
-
-Create a local values file with your secrets (DO NOT COMMIT THIS FILE):
+### Step 3: Deploy with Helm
 
 ```bash
-# values-local.yaml
-secrets:
-  DATABASE_URL: "postgresql://user:pass@host:5432/db"
-  BETTER_AUTH_SECRET: "your-secret-here"
-  OPENAI_API_KEY: "sk-..."
+helm upgrade --install todo-app ./helm/todo-app \
+  -f ./helm/todo-app/values-local.yaml \
+  --set "secrets.databaseUrl=$DATABASE_URL" \
+  --set "secrets.jwtSecret=$JWT_SECRET" \
+  --set "secrets.groqApiKey=$GROQ_API_KEY"
 ```
 
-Install the chart:
+### Step 4: Verify Deployment
 
 ```bash
-helm install todo-app ./helm -f values-local.yaml
+# Check pods
+kubectl get pods
+
+# Check services
+kubectl get svc
+
+# View logs
+kubectl logs -f deployment/todo-app-backend
+kubectl logs -f deployment/todo-app-frontend
 ```
 
-### 4. Access the Application
+## Directory Structure
 
-Get the URL for the frontend service:
-
-```bash
-minikube service todo-app-frontend --url
 ```
-
-Or perform port forwarding:
-
-```bash
-kubectl port-forward service/todo-app-frontend 3000:3000
+phase-4/
+├── backend/
+│   └── Dockerfile           # Backend container
+├── frontend/
+│   └── Dockerfile           # Frontend container
+├── helm/
+│   └── todo-app/
+│       ├── Chart.yaml       # Helm chart metadata
+│       ├── values.yaml      # Default values
+│       ├── values-local.yaml # Minikube values
+│       └── templates/
+│           ├── _helpers.tpl
+│           ├── backend.yaml
+│           ├── frontend.yaml
+│           ├── configmap.yaml
+│           ├── secrets.yaml
+│           └── ingress.yaml
+├── deploy-local.sh          # Automated deployment script
+└── README.md                # This file
 ```
-
-Then visit `http://localhost:3000`.
-
-## AI Integration
-
-This phase leveraged AI tools for DevOps:
-- **Claude Code**: Generated Dockerfiles and Helm charts from specifications.
-- **Gordon (Docker AI)**: Used to optimize Dockerfiles (simulated).
-- **kubectl-ai**: Used for generating kubectl commands for debugging.
 
 ## Troubleshooting
 
-- **ImagePullBackOff**: Ensure you ran `eval $(minikube docker-env)` before building images.
-- **CrashLoopBackOff**: Check logs with `kubectl logs <pod-name>`. Check DB connection strings.
+### Pod not starting?
+```bash
+kubectl describe pod <pod-name>
+kubectl get events --sort-by='.lastTimestamp'
+```
 
-## Submission Checklist
+### Container crashing?
+```bash
+kubectl logs <pod-name> --previous
+```
 
-- [ ] Add Demo Video link (max 90s) to `hackathon.md` or submission form.
-- [ ] Add WhatsApp number for presentation invitation.
-- [ ] Push code to GitHub.
-- [ ] Submit via Google Form.
+### Database connection issues?
+- Check DATABASE_URL is correctly set
+- Neon DB requires SSL: `?sslmode=require`
 
+### Image not found?
+```bash
+# Ensure using Minikube's Docker
+eval $(minikube docker-env)
+docker images | grep todo
+```
+
+## Commands Reference
+
+```bash
+# Scale backend
+kubectl scale deployment/todo-app-backend --replicas=2
+
+# Restart deployment
+kubectl rollout restart deployment/todo-app-backend
+
+# Uninstall
+helm uninstall todo-app
+
+# Stop Minikube
+minikube stop
+
+# Delete Minikube cluster
+minikube delete
+```
+
+## Technology Stack
+
+| Component | Technology |
+|-----------|------------|
+| Containerization | Docker |
+| Orchestration | Kubernetes (Minikube) |
+| Package Manager | Helm 3 |
+| Backend | FastAPI + Python 3.12 |
+| Frontend | Next.js 16 |
+| Database | Neon Serverless PostgreSQL |
+| AI | Groq API (Llama 3.3) |

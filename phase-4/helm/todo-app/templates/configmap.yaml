@@ -1,8 +1,13 @@
+# ConfigMap for non-sensitive configuration
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: {{ .Release.Name }}-config
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
 data:
-  ENVIRONMENT: {{ .Values.env.ENVIRONMENT | quote }}
-  BACKEND_URL: "http://{{ .Release.Name }}-backend:{{ .Values.backend.service.port }}"
-  CORS_ORIGINS: "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001,http://127.0.0.1:3001,http://127.0.0.1:39067,http://127.0.0.1:30000,*"
+  HOST: "0.0.0.0"
+  PORT: "8000"
+  ENVIRONMENT: {{ .Values.environment | default "development" | quote }}
+  LOG_LEVEL: {{ .Values.logLevel | default "INFO" | quote }}
+  CORS_ORIGINS: {{ .Values.config.corsOrigins | default "http://localhost:3000" | quote }}

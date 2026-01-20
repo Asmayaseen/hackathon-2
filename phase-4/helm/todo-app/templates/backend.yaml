@@ -1,11 +1,13 @@
+# Backend Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Release.Name }}-backend
   labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
     app: {{ .Release.Name }}-backend
 spec:
-  replicas: {{ .Values.backend.replicaCount }}
+  replicas: {{ .Values.backend.replicas | default 1 }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}-backend
@@ -13,16 +15,40 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}-backend
+        {{- include "todo-app.selectorLabels" . | nindent 8 }}
     spec:
       containers:
         - name: backend
-          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
-          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag | default .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy | default "IfNotPresent" }}
           ports:
-            - containerPort: {{ .Values.backend.service.port }}
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: database-url
+            - name: BETTER_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: jwt-secret
+            - name: GROQ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: groq-api-key
+                  optional: true
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: openai-api-key
+                  optional: true
           envFrom:
-            - secretRef:
-                name: {{ .Release.Name }}-secrets
             - configMapRef:
                 name: {{ .Release.Name }}-config
           resources:
@@ -30,32 +56,33 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: {{ .Values.backend.service.port }}
-            initialDelaySeconds: 60
-            periodSeconds: 15
-            timeoutSeconds: 10
-            failureThreshold: 5
+              port: 8000
+            initialDelaySeconds: {{ .Values.backend.probes.liveness.initialDelaySeconds | default 60 }}
+            periodSeconds: {{ .Values.backend.probes.liveness.periodSeconds | default 15 }}
+            timeoutSeconds: {{ .Values.backend.probes.liveness.timeoutSeconds | default 10 }}
+            failureThreshold: {{ .Values.backend.probes.liveness.failureThreshold | default 5 }}
           readinessProbe:
             httpGet:
               path: /health
-              port: {{ .Values.backend.service.port }}
-            initialDelaySeconds: 30
-            periodSeconds: 10
-            timeoutSeconds: 5
-            failureThreshold: 5
+              port: 8000
+            initialDelaySeconds: {{ .Values.backend.probes.readiness.initialDelaySeconds | default 30 }}
+            periodSeconds: {{ .Values.backend.probes.readiness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.backend.probes.readiness.timeoutSeconds | default 5 }}
+            failureThreshold: {{ .Values.backend.probes.readiness.failureThreshold | default 5 }}
 ---
+# Backend Service
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Release.Name }}-backend
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.backend.service.type }}
+  type: {{ .Values.backend.service.type | default "ClusterIP" }}
   ports:
-    - port: {{ .Values.backend.service.port }}
-      targetPort: {{ .Values.backend.service.port }}
+    - port: {{ .Values.backend.service.port | default 8000 }}
+      targetPort: 8000
       protocol: TCP
-      {{- if and (eq .Values.backend.service.type "NodePort") .Values.backend.service.nodePort }}
-      nodePort: {{ .Values.backend.service.nodePort }}
-      {{- end }}
+      name: http
   selector:
     app: {{ .Release.Name }}-backend

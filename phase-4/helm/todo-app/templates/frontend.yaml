@@ -1,11 +1,13 @@
+# Frontend Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Release.Name }}-frontend
   labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
     app: {{ .Release.Name }}-frontend
 spec:
-  replicas: {{ .Values.frontend.replicaCount }}
+  replicas: {{ .Values.frontend.replicas | default 1 }}
   selector:
     matchLabels:
       app: {{ .Release.Name }}-frontend
@@ -13,33 +15,51 @@ spec:
     metadata:
       labels:
         app: {{ .Release.Name }}-frontend
+        {{- include "todo-app.selectorLabels" . | nindent 8 }}
     spec:
       containers:
         - name: frontend
-          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
-          imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+          image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag | default .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.frontend.image.pullPolicy | default "IfNotPresent" }}
           ports:
-            - containerPort: {{ .Values.frontend.service.port }}
+            - name: http
+              containerPort: 3000
+              protocol: TCP
           env:
-             - name: NEXT_PUBLIC_API_URL
-               value: "http://{{ .Release.Name }}-backend:{{ .Values.backend.service.port }}"
-          envFrom:
-            - configMapRef:
-                name: {{ .Release.Name }}-config
-            # Frontend relies on client-side envs mostly, but some server-side envs might be needed
+            - name: NEXT_PUBLIC_API_URL
+              value: "{{ .Values.frontend.apiUrl }}"
           resources:
             {{- toYaml .Values.frontend.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
 ---
+# Frontend Service
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Release.Name }}-frontend
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.frontend.service.type }}
+  type: {{ .Values.frontend.service.type | default "ClusterIP" }}
   ports:
-    - port: {{ .Values.frontend.service.port }}
-      targetPort: {{ .Values.frontend.service.port }}
-      nodePort: {{ .Values.frontend.service.nodePort }}
+    - port: {{ .Values.frontend.service.port | default 3000 }}
+      targetPort: 3000
       protocol: TCP
+      name: http
   selector:
     app: {{ .Release.Name }}-frontend

@@ -1,56 +1,76 @@
-# Default values for todo-app.
+# Default values for todo-app
 # This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
 
+# Global settings
+global:
+  imageTag: latest
+
+# Backend configuration
 backend:
-  replicaCount: 1
+  replicas: 1
   image:
     repository: todo-backend
-    pullPolicy: Never # Local Minikube
-    tag: "latest"
+    tag: latest
+    pullPolicy: IfNotPresent
   service:
     type: ClusterIP
     port: 8000
   resources:
-    limits:
-      cpu: 100m
-      memory: 128Mi
     requests:
-      cpu: 100m
-      memory: 128Mi
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  probes:
+    liveness:
+      initialDelaySeconds: 60
+      periodSeconds: 15
+      timeoutSeconds: 10
+      failureThreshold: 5
+    readiness:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 5
 
+# Frontend configuration
 frontend:
-  replicaCount: 1
+  replicas: 1
   image:
     repository: todo-frontend
-    pullPolicy: Never # Local Minikube
-    tag: "latest"
+    tag: latest
+    pullPolicy: IfNotPresent
   service:
-    type: NodePort # Or LoadBalancer for Minikube tunnel
+    type: ClusterIP
     port: 3000
-    nodePort: 30000
   resources:
-    limits:
-      cpu: 100m
-      memory: 128Mi
     requests:
-      cpu: 100m
-      memory: 128Mi
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+  # API URL for browser-side requests (build-time)
+  apiUrl: "http://localhost:8000"
 
-env:
-  # ConfigMap variables
-  ENVIRONMENT: "development"
+# Environment configuration
+environment: development
+logLevel: INFO
 
+# Secrets - OVERRIDE via values-local.yaml or --set flags
+# NEVER commit actual secrets to git!
 secrets:
-  # Secrets will be provided manually or via values-local.yaml
-  DATABASE_URL: ""
-  BETTER_AUTH_SECRET: ""
-  OPENAI_API_KEY: ""
-  GROQ_API_KEY: ""
+  databaseUrl: ""
+  jwtSecret: ""
+  groqApiKey: ""
+  openaiApiKey: ""
 
+# ConfigMap values
+config:
+  corsOrigins: "http://localhost:3000,http://127.0.0.1:3000"
+
+# Ingress configuration (optional)
 ingress:
   enabled: false
-  className: nginx
-  host: todo.local
-  annotations: {}
-  tls: []
+  host: "todo.local"
