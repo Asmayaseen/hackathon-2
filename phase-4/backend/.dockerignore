@@ -1,13 +1,43 @@
-__pycache__
+# Python
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
+*.so
+
+# Virtual environments
 env/
 venv/
+.venv/
+
+# Environment files
 .env
-.git
+.env.*
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Testing
 .coverage
 htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Docker
 Dockerfile
-README.md
+docker-compose*.yml
+
+# Documentation (exclude most, but keep README.md for pyproject.toml)
+*.md
+!README.md
+*.log
+
+# Unnecessary files
+=*
+TEST_*.py

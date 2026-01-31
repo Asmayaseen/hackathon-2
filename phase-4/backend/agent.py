@@ -20,18 +20,29 @@ from tool_validation import (
     ToolValidator
 )
 
+# Default model name constant (for tests and fallback)
+MODEL_NAME = "gpt-4o-mini"
+
 # Configure client for OpenAI or Groq
 # Priority: GROQ_API_KEY > OPENAI_API_KEY
 if os.getenv("GROQ_API_KEY"):
     api_key = os.getenv("GROQ_API_KEY")
     base_url = "https://api.groq.com/openai/v1"
     model_name = "llama-3.3-70b-versatile"
+    MODEL_NAME = model_name  # Update constant
     print(f"🔧 Using Groq API with model: {model_name}")
 elif os.getenv("OPENAI_API_KEY"):
     api_key = os.getenv("OPENAI_API_KEY")
     base_url = None
     model_name = os.getenv("OPENAI_MODEL", "gpt-4o")
+    MODEL_NAME = model_name  # Update constant
     print(f"🔧 Using OpenAI API with model: {model_name}")
+elif os.getenv("ENVIRONMENT") == "test":
+    # Test mode - mock client
+    api_key = "test-key"
+    base_url = None
+    model_name = MODEL_NAME
+    print(f"🧪 Test mode with mock model: {model_name}")
 else:
     raise ValueError("Either OPENAI_API_KEY or GROQ_API_KEY must be set")
 

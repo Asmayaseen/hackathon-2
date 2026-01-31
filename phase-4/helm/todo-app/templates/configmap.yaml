@@ -8,6 +8,7 @@ metadata:
 data:
   HOST: "0.0.0.0"
   PORT: "8000"
+  WORKERS: {{ .Values.config.workers | default "4" | quote }}
   ENVIRONMENT: {{ .Values.environment | default "development" | quote }}
   LOG_LEVEL: {{ .Values.logLevel | default "INFO" | quote }}
   CORS_ORIGINS: {{ .Values.config.corsOrigins | default "http://localhost:3000" | quote }}

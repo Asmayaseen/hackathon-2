@@ -8,19 +8,32 @@ from sqlmodel import create_engine, Session, SQLModel
 import os
 
 # Get database URL from environment
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Use SQLite for testing, PostgreSQL for production
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
-if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is not set")
+if ENVIRONMENT == "test":
+    DATABASE_URL = "sqlite:///./test.db"
+else:
+    DATABASE_URL = os.getenv("DATABASE_URL")
+    if not DATABASE_URL:
+        raise ValueError("DATABASE_URL environment variable is not set")
 
 # Create database engine with connection pooling
-engine = create_engine(
-    DATABASE_URL,
-    echo=True,  # Log SQL queries (set to False in production)
-    pool_pre_ping=True,  # Verify connections before using
-    pool_size=10,  # Max 10 connections
-    max_overflow=20  # Allow 20 overflow connections
-)
+# SQLite doesn't support pool_size/max_overflow
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(
+        DATABASE_URL,
+        echo=False,
+        connect_args={"check_same_thread": False}
+    )
+else:
+    engine = create_engine(
+        DATABASE_URL,
+        echo=True,  # Log SQL queries (set to False in production)
+        pool_pre_ping=True,  # Verify connections before using
+        pool_size=10,  # Max 10 connections
+        max_overflow=20  # Allow 20 overflow connections
+    )
 
 
 def create_db_and_tables():

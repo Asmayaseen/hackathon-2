@@ -1,15 +1,15 @@
 # syntax=docker/dockerfile:1
 # Phase 4: Frontend Dockerfile - Multi-stage build for Next.js
-# Following containerizing-applications skill patterns
+# Using node:20-slim instead of alpine for Tailwind CSS 4 / lightningcss compatibility
 
-FROM node:20-alpine AS deps
+FROM node:20-slim AS deps
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 RUN npm ci
 
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 WORKDIR /app
 
 # Copy deps from previous stage
@@ -23,13 +23,13 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 # Build the application
 RUN npm run build
 
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 
 # Create non-root user
-RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
+RUN groupadd -g 1001 nodejs && useradd -u 1001 -g nodejs nextjs
 
 # Copy built assets
 COPY --from=builder /app/.next/standalone ./
@@ -49,6 +49,6 @@ ENV HOSTNAME=0.0.0.0
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
-    CMD wget --spider http://127.0.0.1:3000/ || exit 1
+    CMD node -e "require('http').get('http://127.0.0.1:3000/', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 
 CMD ["node", "server.js"]

@@ -1,13 +1,13 @@
 # Docker Compose for Phase 4 - Local Development
 # Evolution Todo Chatbot Application
-
-version: '3.8'
+# Run from phase-4 directory: docker-compose up --build
 
 services:
   backend:
     build:
-      context: ../backend
+      context: ./backend
       dockerfile: Dockerfile
+    image: todo-backend:latest
     container_name: todo-backend
     ports:
       - "8000:8000"
@@ -16,9 +16,9 @@ services:
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GROQ_API_KEY=${GROQ_API_KEY}
-      - CORS_ORIGINS=http://localhost:3000
+      - CORS_ORIGINS=http://localhost:3000,http://frontend:3000
     env_file:
-      - ../backend/.env
+      - ./backend/.env
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -31,15 +31,16 @@ services:
 
   frontend:
     build:
-      context: ../frontend
+      context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=http://backend:8000
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    image: todo-frontend:latest
     container_name: todo-frontend
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
       backend:
         condition: service_healthy
@@ -50,6 +51,3 @@ services:
 networks:
   todo-network:
     driver: bridge
-
-volumes:
-  backend-logs:

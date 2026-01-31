@@ -1,1 +1,28 @@
+# Local Helm values (contains secrets)
 values-local.yaml
+
+# Build artifacts
+backend-build/
+frontend-build/
+
+# Test/Coverage
+coverage.xml
+.coverage
+htmlcov/
+
+# Cluster state
+cluster_status.json
+
+# Environment files
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+node_modules/
+.next/
