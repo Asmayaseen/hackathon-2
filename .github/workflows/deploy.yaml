@@ -32,9 +32,9 @@ env:
   REGISTRY: docker.io
   # Override these in repository secrets
   REGISTRY_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-  BACKEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/todo-backend
-  FRONTEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/todo-frontend
-  NOTIFICATION_IMAGE: ${{ secrets.DOCKER_USERNAME }}/todo-notification
+  BACKEND_IMAGE: ${{ secrets.DOCKER_USERNAME || 'local' }}/todo-backend
+  FRONTEND_IMAGE: ${{ secrets.DOCKER_USERNAME || 'local' }}/todo-frontend
+  NOTIFICATION_IMAGE: ${{ secrets.DOCKER_USERNAME || 'local' }}/todo-notification
 
 jobs:
   # Build and test
@@ -43,16 +43,28 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.meta.outputs.version }}
+      push_enabled: ${{ steps.check-secrets.outputs.push_enabled }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check Docker secrets
+        id: check-secrets
+        run: |
+          if [ -n "${{ secrets.DOCKER_USERNAME }}" ] && [ -n "${{ secrets.DOCKER_PASSWORD }}" ]; then
+            echo "push_enabled=true" >> $GITHUB_OUTPUT
+            echo "✅ Docker credentials configured - will push images"
+          else
+            echo "push_enabled=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Docker credentials not configured - build only mode"
+          fi
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && steps.check-secrets.outputs.push_enabled == 'true'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
@@ -75,7 +87,7 @@ jobs:
         with:
           context: ./phase-4/backend
           file: ./phase-4/backend/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.event_name != 'pull_request' && steps.check-secrets.outputs.push_enabled == 'true' }}
           tags: |
             ${{ env.BACKEND_IMAGE }}:${{ steps.meta.outputs.version }}
             ${{ env.BACKEND_IMAGE }}:latest
@@ -88,7 +100,7 @@ jobs:
         with:
           context: ./phase-4/frontend
           file: ./phase-4/frontend/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.event_name != 'pull_request' && steps.check-secrets.outputs.push_enabled == 'true' }}
           tags: |
             ${{ env.FRONTEND_IMAGE }}:${{ steps.meta.outputs.version }}
             ${{ env.FRONTEND_IMAGE }}:latest
@@ -103,7 +115,7 @@ jobs:
         with:
           context: ./phase-5/notification-service
           file: ./phase-5/notification-service/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ github.event_name != 'pull_request' && steps.check-secrets.outputs.push_enabled == 'true' }}
           tags: |
             ${{ env.NOTIFICATION_IMAGE }}:${{ steps.meta.outputs.version }}
             ${{ env.NOTIFICATION_IMAGE }}:latest
@@ -115,7 +127,7 @@ jobs:
     name: Deploy to Kubernetes
     needs: build
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && needs.build.outputs.push_enabled == 'true'
     environment:
       name: ${{ github.event.inputs.environment || 'development' }}
 
@@ -202,9 +214,17 @@ jobs:
     steps:
       - name: Deployment Summary
         run: |
-          if [ "${{ needs.deploy.result }}" == "success" ]; then
+          if [ "${{ needs.build.outputs.push_enabled }}" != "true" ]; then
+            echo "ℹ️ Build-only mode (Docker credentials not configured)"
+            echo "✅ Images built successfully"
+            echo "To enable push/deploy, add DOCKER_USERNAME and DOCKER_PASSWORD secrets"
+            exit 0
+          elif [ "${{ needs.deploy.result }}" == "success" ]; then
             echo "✅ Deployment successful!"
             echo "Image tag: ${{ needs.build.outputs.image_tag }}"
+          elif [ "${{ needs.deploy.result }}" == "skipped" ]; then
+            echo "ℹ️ Deployment skipped (secrets not configured)"
+            exit 0
           else
             echo "❌ Deployment failed"
             exit 1
