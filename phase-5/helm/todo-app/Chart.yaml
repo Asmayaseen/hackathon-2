@@ -1,0 +1,25 @@
+# Phase 5: Todo App Helm Chart with Dapr Support
+apiVersion: v2
+name: todo-app
+description: Evolution Todo - Event-Driven Cloud-Native Application
+type: application
+version: 5.0.0
+appVersion: "5.0.0"
+
+keywords:
+  - todo
+  - chatbot
+  - fastapi
+  - nextjs
+  - dapr
+  - kafka
+
+home: https://github.com/evolution-todo/hackathon-2
+
+dependencies:
+  # Dapr is installed separately via dapr init -k
+  []
+
+maintainers:
+  - name: Evolution Todo Team
+    email: team@evolution-todo.dev

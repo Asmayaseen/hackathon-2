@@ -1,0 +1,113 @@
+# T5-205: Backend Deployment with Dapr Sidecar
+# Spec: US-P5-05 (Dapr Pub/Sub Integration)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-backend
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+    app: {{ .Release.Name }}-backend
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-backend
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-backend
+        {{- include "todo-app.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+      annotations:
+        {{- if .Values.dapr.enabled }}
+        # Dapr sidecar injection annotations
+        dapr.io/enabled: "true"
+        dapr.io/app-id: {{ .Values.backend.dapr.appId | default "todo-backend" | quote }}
+        dapr.io/app-port: {{ .Values.backend.dapr.appPort | default 8000 | quote }}
+        dapr.io/log-level: {{ .Values.dapr.logLevel | default "info" | quote }}
+        dapr.io/enable-metrics: {{ .Values.dapr.enableMetrics | default true | quote }}
+        dapr.io/metrics-port: {{ .Values.dapr.metricsPort | default 9090 | quote }}
+        {{- end }}
+    spec:
+      containers:
+        - name: backend
+          image: "{{ .Values.global.imageRegistry }}{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag | default .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            # Database connection
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: database-url
+            # JWT Authentication
+            - name: BETTER_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: jwt-secret
+            # AI API Keys
+            - name: GROQ_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: groq-api-key
+                  optional: true
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: openai-api-key
+                  optional: true
+            # Dapr configuration
+            - name: DAPR_HTTP_PORT
+              value: "3500"
+            - name: DAPR_PUBSUB_NAME
+              value: {{ .Values.config.daprPubsubName | default "kafka-pubsub" | quote }}
+            # Kafka (for direct access if needed)
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: {{ .Values.kafka.bootstrapServers | quote }}
+          envFrom:
+            - configMapRef:
+                name: {{ .Release.Name }}-config
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: {{ .Values.backend.probes.liveness.initialDelaySeconds | default 60 }}
+            periodSeconds: {{ .Values.backend.probes.liveness.periodSeconds | default 15 }}
+            timeoutSeconds: {{ .Values.backend.probes.liveness.timeoutSeconds | default 10 }}
+            failureThreshold: {{ .Values.backend.probes.liveness.failureThreshold | default 5 }}
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: {{ .Values.backend.probes.readiness.initialDelaySeconds | default 30 }}
+            periodSeconds: {{ .Values.backend.probes.readiness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.backend.probes.readiness.timeoutSeconds | default 5 }}
+            failureThreshold: {{ .Values.backend.probes.readiness.failureThreshold | default 5 }}
+---
+# Backend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-backend
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  type: {{ .Values.backend.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.backend.service.port | default 8000 }}
+      targetPort: 8000
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ .Release.Name }}-backend

@@ -1,0 +1,74 @@
+# Phase 5: Cloud Kubernetes values (DOKS/AKS/GKE)
+# Override with actual values for production deployment
+
+# Global settings
+global:
+  imageTag: latest
+  imageRegistry: "docker.io/"  # Your registry
+
+# Dapr enabled for production
+dapr:
+  enabled: true
+  logLevel: info
+  enableMetrics: true
+  metricsPort: 9090
+
+# Backend configuration
+backend:
+  replicas: 2  # HA
+  image:
+    repository: yourusername/todo-backend
+    pullPolicy: Always
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+
+# Frontend configuration
+frontend:
+  replicas: 2  # HA
+  image:
+    repository: yourusername/todo-frontend
+    pullPolicy: Always
+  # Set to your ingress URL
+  apiUrl: "https://todo.yourdomain.com"
+
+# Notification Service
+notificationService:
+  enabled: true
+  replicas: 1
+  image:
+    repository: yourusername/todo-notification
+    pullPolicy: Always
+
+# Environment
+environment: production
+logLevel: INFO
+
+# IMPORTANT: Override via --set or external secret management
+secrets:
+  databaseUrl: ""  # Set via --set secrets.databaseUrl=...
+  jwtSecret: ""
+  groqApiKey: ""
+  openaiApiKey: ""
+
+# ConfigMap
+config:
+  corsOrigins: "https://todo.yourdomain.com"
+  daprPubsubName: "kafka-pubsub"
+
+# Kafka
+kafka:
+  bootstrapServers: "taskflow-kafka-kafka-bootstrap.kafka:9092"
+
+# Ingress enabled for external access
+ingress:
+  enabled: true
+  className: nginx
+  host: "todo.yourdomain.com"
+  tls:
+    enabled: true
+    secretName: "todo-tls-secret"

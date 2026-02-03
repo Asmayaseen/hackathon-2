@@ -1,0 +1,15 @@
+# Phase 5: ConfigMap with Dapr configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+data:
+  ENVIRONMENT: {{ .Values.environment | default "development" | quote }}
+  LOG_LEVEL: {{ .Values.logLevel | default "INFO" | quote }}
+  CORS_ORIGINS: {{ .Values.config.corsOrigins | quote }}
+  # Dapr Pub/Sub configuration
+  DAPR_PUBSUB_NAME: {{ .Values.config.daprPubsubName | default "kafka-pubsub" | quote }}
+  # Kafka bootstrap servers (for direct access if needed)
+  KAFKA_BOOTSTRAP_SERVERS: {{ .Values.kafka.bootstrapServers | quote }}

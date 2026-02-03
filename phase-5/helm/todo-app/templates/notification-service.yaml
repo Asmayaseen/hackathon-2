@@ -1,0 +1,84 @@
+# T5-404: Notification Service Deployment with Dapr
+# Spec: US-P5-06 (Notification Service)
+{{- if .Values.notificationService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-notification
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+    app: {{ .Release.Name }}-notification
+    app.kubernetes.io/component: notification-service
+spec:
+  replicas: {{ .Values.notificationService.replicas | default 1 }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-notification
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-notification
+        {{- include "todo-app.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: notification-service
+      annotations:
+        {{- if .Values.dapr.enabled }}
+        # Dapr sidecar for consuming reminders topic
+        dapr.io/enabled: "true"
+        dapr.io/app-id: {{ .Values.notificationService.dapr.appId | default "notification-service" | quote }}
+        dapr.io/app-port: {{ .Values.notificationService.dapr.appPort | default 8001 | quote }}
+        dapr.io/log-level: {{ .Values.dapr.logLevel | default "info" | quote }}
+        {{- end }}
+    spec:
+      containers:
+        - name: notification
+          image: "{{ .Values.global.imageRegistry }}{{ .Values.notificationService.image.repository }}:{{ .Values.notificationService.image.tag | default .Values.global.imageTag }}"
+          imagePullPolicy: {{ .Values.notificationService.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - name: http
+              containerPort: 8001
+              protocol: TCP
+          env:
+            # Database connection for notification state
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Release.Name }}-secrets
+                  key: database-url
+            # Dapr configuration
+            - name: DAPR_HTTP_PORT
+              value: "3500"
+            - name: DAPR_PUBSUB_NAME
+              value: {{ .Values.config.daprPubsubName | default "kafka-pubsub" | quote }}
+          resources:
+            {{- toYaml .Values.notificationService.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8001
+            initialDelaySeconds: 10
+            periodSeconds: 10
+---
+# Notification Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-notification
+  labels:
+    {{- include "todo-app.labels" . | nindent 4 }}
+    app.kubernetes.io/component: notification-service
+spec:
+  type: {{ .Values.notificationService.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.notificationService.service.port | default 8001 }}
+      targetPort: 8001
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ .Release.Name }}-notification
+{{- end }}
