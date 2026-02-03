@@ -51,8 +51,11 @@ jobs:
 
       - name: Check Docker secrets
         id: check-secrets
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASS: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          if [ -n "${{ secrets.DOCKER_USERNAME }}" ] && [ -n "${{ secrets.DOCKER_PASSWORD }}" ]; then
+          if [ -n "$DOCKER_USER" ] && [ -n "$DOCKER_PASS" ]; then
             echo "push_enabled=true" >> $GITHUB_OUTPUT
             echo "✅ Docker credentials configured - will push images"
           else
