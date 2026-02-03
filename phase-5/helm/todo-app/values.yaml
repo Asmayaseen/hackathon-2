@@ -1,0 +1,120 @@
+# Phase 5: Default values for todo-app with Dapr
+# Spec: US-P5-05, US-P5-08
+
+# Global settings
+global:
+  imageTag: latest
+  imageRegistry: ""  # Default: Docker Hub
+
+# Dapr configuration
+dapr:
+  enabled: true
+  # Common Dapr annotations
+  appPort: 8000
+  logLevel: info
+  # Enable metrics and tracing
+  enableMetrics: true
+  metricsPort: 9090
+
+# Backend configuration (with Dapr sidecar)
+backend:
+  replicas: 1
+  image:
+    repository: todo-backend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8000
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  probes:
+    liveness:
+      initialDelaySeconds: 60
+      periodSeconds: 15
+      timeoutSeconds: 10
+      failureThreshold: 5
+    readiness:
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 5
+  # Dapr-specific
+  dapr:
+    appId: todo-backend
+    appPort: 8000
+
+# Frontend configuration
+frontend:
+  replicas: 1
+  image:
+    repository: todo-frontend
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+  apiUrl: "http://localhost:8000"
+
+# Notification Service (new in Phase 5)
+notificationService:
+  enabled: true
+  replicas: 1
+  image:
+    repository: todo-notification
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8001
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+    limits:
+      memory: "256Mi"
+      cpu: "200m"
+  dapr:
+    appId: notification-service
+    appPort: 8001
+
+# Environment configuration
+environment: development
+logLevel: INFO
+
+# Secrets - OVERRIDE via values-local.yaml or --set flags
+secrets:
+  databaseUrl: ""
+  jwtSecret: ""
+  groqApiKey: ""
+  openaiApiKey: ""
+
+# ConfigMap values
+config:
+  corsOrigins: "http://localhost:3000,http://127.0.0.1:3000"
+  daprPubsubName: "kafka-pubsub"
+
+# Kafka configuration
+kafka:
+  bootstrapServers: "taskflow-kafka-kafka-bootstrap.kafka:9092"
+
+# Ingress configuration
+ingress:
+  enabled: false
+  className: nginx
+  host: "todo.local"
+  tls:
+    enabled: false
+    secretName: ""

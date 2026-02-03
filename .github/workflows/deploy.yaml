@@ -1,0 +1,211 @@
+# T5-601: CI/CD Pipeline for Phase 5
+# Spec: US-P5-07 (CI/CD Pipeline)
+# Builds, pushes, and deploys to Kubernetes
+
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'phase-5/**'
+      - 'phase-4/backend/**'
+      - 'phase-4/frontend/**'
+      - '.github/workflows/deploy.yaml'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+env:
+  REGISTRY: docker.io
+  # Override these in repository secrets
+  REGISTRY_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  BACKEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/todo-backend
+  FRONTEND_IMAGE: ${{ secrets.DOCKER_USERNAME }}/todo-frontend
+  NOTIFICATION_IMAGE: ${{ secrets.DOCKER_USERNAME }}/todo-notification
+
+jobs:
+  # Build and test
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.BACKEND_IMAGE }}
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+            type=semver,pattern={{version}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # Build Backend
+      - name: Build and push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./phase-4/backend
+          file: ./phase-4/backend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.BACKEND_IMAGE }}:${{ steps.meta.outputs.version }}
+            ${{ env.BACKEND_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Build Frontend
+      - name: Build and push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./phase-4/frontend
+          file: ./phase-4/frontend/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.FRONTEND_IMAGE }}:${{ steps.meta.outputs.version }}
+            ${{ env.FRONTEND_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.API_URL }}
+
+      # Build Notification Service
+      - name: Build and push Notification Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./phase-5/notification-service
+          file: ./phase-5/notification-service/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: |
+            ${{ env.NOTIFICATION_IMAGE }}:${{ steps.meta.outputs.version }}
+            ${{ env.NOTIFICATION_IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Deploy to Kubernetes
+  deploy:
+    name: Deploy to Kubernetes
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    environment:
+      name: ${{ github.event.inputs.environment || 'development' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: 'latest'
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'latest'
+
+      - name: Configure Kubernetes credentials
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Verify cluster connection
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Deploy Dapr components
+        run: |
+          kubectl apply -f phase-5/dapr-components/
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install todo-app ./phase-5/helm/todo-app \
+            --namespace default \
+            --set global.imageTag=${{ needs.build.outputs.image_tag }} \
+            --set secrets.databaseUrl="${{ secrets.DATABASE_URL }}" \
+            --set secrets.jwtSecret="${{ secrets.JWT_SECRET }}" \
+            --set secrets.groqApiKey="${{ secrets.GROQ_API_KEY }}" \
+            --set secrets.openaiApiKey="${{ secrets.OPENAI_API_KEY }}" \
+            --set environment=${{ github.event.inputs.environment || 'development' }} \
+            --wait \
+            --timeout 5m
+
+      - name: Wait for deployment rollout
+        run: |
+          kubectl rollout status deployment/todo-app-backend --timeout=300s
+          kubectl rollout status deployment/todo-app-frontend --timeout=300s
+          kubectl rollout status deployment/todo-app-notification --timeout=300s || true
+
+      - name: Run health checks
+        run: |
+          # Wait for pods to be ready
+          kubectl wait --for=condition=ready pod -l app=todo-app-backend --timeout=120s
+          kubectl wait --for=condition=ready pod -l app=todo-app-frontend --timeout=120s
+
+          # Check health endpoints
+          BACKEND_POD=$(kubectl get pod -l app=todo-app-backend -o jsonpath="{.items[0].metadata.name}")
+          kubectl exec $BACKEND_POD -- curl -f http://localhost:8000/health || exit 1
+
+          echo "✅ Deployment health check passed"
+
+      - name: Get deployment info
+        run: |
+          echo "=== Pods ==="
+          kubectl get pods -l app.kubernetes.io/instance=todo-app
+
+          echo ""
+          echo "=== Services ==="
+          kubectl get svc -l app.kubernetes.io/instance=todo-app
+
+          echo ""
+          echo "=== Dapr Sidecars ==="
+          kubectl get pods -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.containers[*].name}{"\n"}{end}' | grep todo-app
+
+  # Notify on completion
+  notify:
+    name: Notify Deployment Status
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    if: always() && github.event_name != 'pull_request'
+
+    steps:
+      - name: Deployment Summary
+        run: |
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "✅ Deployment successful!"
+            echo "Image tag: ${{ needs.build.outputs.image_tag }}"
+          else
+            echo "❌ Deployment failed"
+            exit 1
+          fi

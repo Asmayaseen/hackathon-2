@@ -1,0 +1,57 @@
+# Phase 5: Local Minikube values
+# Copy this file and fill in your secrets
+
+# Global settings
+global:
+  imageTag: latest
+
+# Dapr enabled for local development
+dapr:
+  enabled: true
+  logLevel: debug
+
+# Backend configuration
+backend:
+  replicas: 1
+  image:
+    repository: todo-backend
+    pullPolicy: Never  # Use local images
+
+# Frontend configuration
+frontend:
+  replicas: 1
+  image:
+    repository: todo-frontend
+    pullPolicy: Never
+  apiUrl: "http://localhost:8000"
+
+# Notification Service
+notificationService:
+  enabled: true
+  image:
+    repository: todo-notification
+    pullPolicy: Never
+
+# Environment
+environment: development
+logLevel: DEBUG
+
+# IMPORTANT: Fill in your actual secrets
+secrets:
+  databaseUrl: "postgresql://user:password@host:5432/dbname?sslmode=require"
+  jwtSecret: "your-jwt-secret-here"
+  groqApiKey: ""
+  openaiApiKey: ""
+
+# ConfigMap
+config:
+  corsOrigins: "http://localhost:3000"
+  daprPubsubName: "kafka-pubsub"
+
+# Kafka
+kafka:
+  bootstrapServers: "taskflow-kafka-kafka-bootstrap.kafka:9092"
+
+# Ingress disabled for local (use port-forward or minikube service)
+ingress:
+  enabled: false

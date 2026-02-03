@@ -1,0 +1,66 @@
+# T5-103: Kafka Topics
+# Spec: US-P5-03 (Event-Driven Task Operations)
+# Creates required Kafka topics for Phase 5 event-driven architecture
+
+---
+# task-events: All CRUD operations on tasks
+# Producers: Backend API
+# Consumers: Recurring Service, Audit Service
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: task-events
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: taskflow-kafka
+    app.kubernetes.io/part-of: evolution-todo
+    app.kubernetes.io/component: messaging
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000        # 7 days
+    cleanup.policy: delete
+    max.message.bytes: 1048576     # 1MB
+
+---
+# reminders: Scheduled reminder triggers
+# Producers: Dapr Jobs/Backend
+# Consumers: Notification Service
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: reminders
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: taskflow-kafka
+    app.kubernetes.io/part-of: evolution-todo
+    app.kubernetes.io/component: messaging
+spec:
+  partitions: 1
+  replicas: 1
+  config:
+    retention.ms: 86400000         # 1 day
+    cleanup.policy: delete
+    max.message.bytes: 524288      # 512KB
+
+---
+# task-updates: Real-time client synchronization events
+# Producers: Backend API
+# Consumers: WebSocket Service (future)
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: task-updates
+  namespace: kafka
+  labels:
+    strimzi.io/cluster: taskflow-kafka
+    app.kubernetes.io/part-of: evolution-todo
+    app.kubernetes.io/component: messaging
+spec:
+  partitions: 1
+  replicas: 1
+  config:
+    retention.ms: 3600000          # 1 hour (short-lived sync events)
+    cleanup.policy: delete
+    max.message.bytes: 262144      # 256KB
