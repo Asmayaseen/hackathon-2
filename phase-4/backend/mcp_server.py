@@ -1,18 +1,30 @@
 """
 MCP Server for Evolution Todo - Exposes task operations as AI tools.
 
-Task: T-CHAT-003 to T-CHAT-009
-Spec: specs/phase-3-chatbot/spec.md (FR-CHAT-4)
+Task: T-CHAT-003 to T-CHAT-009, T5-302
+Spec: specs/phase-3-chatbot/spec.md (FR-CHAT-4), specs/features/phase-v-integration.md
 """
 from mcp.server import Server
 from mcp.types import Tool, TextContent
 from typing import Sequence
 from sqlmodel import Session, select
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import httpx
 import os
+import asyncio
+import logging
 from models import Task
 from db import engine
+
+# Phase 5: Event Publishing (T5-302)
+try:
+    from events import publish_task_event, EventType
+    EVENTS_ENABLED = True
+except ImportError:
+    EVENTS_ENABLED = False
+    logging.warning("Events module not available in MCP server")
+
+logger = logging.getLogger(__name__)
 
 # API Base URL for REST API calls
 API_BASE = os.getenv("API_BASE_URL", "http://localhost:8000")
@@ -327,6 +339,14 @@ async def call_tool(name: str, arguments: dict) -> Sequence[TextContent]:
                 session.commit()
                 session.refresh(task)
 
+                # Phase 5: Publish task created event (T5-302)
+                if EVENTS_ENABLED:
+                    try:
+                        asyncio.create_task(publish_task_event(EventType.CREATED, task, user_id))
+                        logger.info(f"MCP: Published CREATED event for task {task.id}")
+                    except Exception as e:
+                        logger.warning(f"MCP: Event publish failed (non-blocking): {e}")
+
                 # Build response message
                 message = f"✅ Task created: '{task.title}' (ID: {task.id})"
                 if task.due_date:
@@ -376,7 +396,7 @@ async def call_tool(name: str, arguments: dict) -> Sequence[TextContent]:
 
                 return [TextContent(type="text", text=message)]
 
-        # Tool 3: complete_task (T-CHAT-006)
+        # Tool 3: complete_task (T-CHAT-006, T5-302, T5-500)
         elif name == "complete_task":
             task_id = arguments["task_id"]
             with Session(engine) as session:
@@ -385,15 +405,41 @@ async def call_tool(name: str, arguments: dict) -> Sequence[TextContent]:
                     return [TextContent(type="text", text=f"❌ Task {task_id} not found")]
 
                 task.completed = not task.completed
-                task.updated_at = datetime.utcnow()
+                task.updated_at = datetime.now(timezone.utc)
                 session.add(task)
                 session.commit()
+                session.refresh(task)
+
+                # Phase 5: Publish completed event (T5-302)
+                if EVENTS_ENABLED:
+                    try:
+                        event_type = EventType.COMPLETED if task.completed else EventType.UPDATED
+                        asyncio.create_task(publish_task_event(event_type, task, user_id))
+                    except Exception as e:
+                        logger.warning(f"MCP: Event publish failed: {e}")
 
                 status = "completed" if task.completed else "uncompleted"
-                return [TextContent(
-                    type="text",
-                    text=f"✅ Task '{task.title}' marked as {status}"
-                )]
+                message = f"✅ Task '{task.title}' marked as {status}"
+
+                # Phase 5: Auto-create next occurrence for recurring tasks (T5-500)
+                if task.completed and task.is_recurring and task.recurrence_pattern:
+                    next_task = _create_next_occurrence(task, user_id)
+                    if next_task:
+                        session.add(next_task)
+                        session.commit()
+                        session.refresh(next_task)
+                        message += f"\n🔁 Next occurrence created: ID {next_task.id}"
+                        if next_task.due_date:
+                            message += f" (Due: {str(next_task.due_date)[:10]})"
+
+                        # Publish created event for new occurrence
+                        if EVENTS_ENABLED:
+                            try:
+                                asyncio.create_task(publish_task_event(EventType.CREATED, next_task, user_id))
+                            except Exception as e:
+                                logger.warning(f"MCP: Event publish for recurrence failed: {e}")
+
+                return [TextContent(type="text", text=message)]
 
         # Tool 4: delete_task (T-CHAT-007)
         elif name == "delete_task":
@@ -608,3 +654,41 @@ async def call_tool(name: str, arguments: dict) -> Sequence[TextContent]:
             type="text",
             text=f"❌ Error: {str(e)}"
         )]
+
+
+def _create_next_occurrence(task: Task, user_id: str):
+    """
+    Create next occurrence for a recurring task (MCP helper).
+
+    Task: T5-500
+    Spec: specs/phase-5/spec.md (US-P5-01)
+    """
+    if not task.recurrence_pattern:
+        return None
+
+    base_date = task.due_date or datetime.now(timezone.utc)
+
+    if task.recurrence_pattern == "daily":
+        next_due = base_date + timedelta(days=1)
+    elif task.recurrence_pattern == "weekly":
+        next_due = base_date + timedelta(weeks=1)
+    elif task.recurrence_pattern == "monthly":
+        next_due = base_date + timedelta(days=30)
+    else:
+        return None
+
+    return Task(
+        user_id=user_id,
+        title=task.title,
+        description=task.description,
+        completed=False,
+        due_date=next_due,
+        priority=task.priority,
+        tags=task.tags or [],
+        recurrence_pattern=task.recurrence_pattern,
+        is_recurring=True,
+        parent_recurring_id=task.id,
+        reminder_offset=task.reminder_offset,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc)
+    )

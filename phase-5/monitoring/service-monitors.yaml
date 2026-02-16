@@ -1,0 +1,115 @@
+# ServiceMonitor definitions for Prometheus to scrape Todo App services
+# These integrate with kube-prometheus-stack
+
+---
+# Backend Service Monitor
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: todo-backend-monitor
+  namespace: default
+  labels:
+    release: prometheus  # Must match prometheus serviceMonitorSelector
+    app: todo-backend
+spec:
+  selector:
+    matchLabels:
+      app: todo-backend
+  endpoints:
+    # Scrape app metrics (if exposed)
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+      - default
+
+---
+# Frontend Service Monitor
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: todo-frontend-monitor
+  namespace: default
+  labels:
+    release: prometheus
+    app: todo-frontend
+spec:
+  selector:
+    matchLabels:
+      app: todo-frontend
+  endpoints:
+    - port: http
+      path: /api/metrics
+      interval: 30s
+      scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+      - default
+
+---
+# Notification Service Monitor
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: notification-service-monitor
+  namespace: default
+  labels:
+    release: prometheus
+    app: notification-service
+spec:
+  selector:
+    matchLabels:
+      app: notification-service
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+      - default
+
+---
+# Dapr Sidecar Service Monitor (via PodMonitor)
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: dapr-sidecar-monitor
+  namespace: default
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchExpressions:
+      - key: dapr.io/enabled
+        operator: Exists
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      interval: 30s
+  namespaceSelector:
+    matchNames:
+      - default
+
+---
+# Kafka (Strimzi) Service Monitor
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kafka-monitor
+  namespace: kafka
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      strimzi.io/cluster: taskflow-kafka
+  endpoints:
+    - port: tcp-prometheus
+      path: /metrics
+      interval: 30s
+  namespaceSelector:
+    matchNames:
+      - kafka

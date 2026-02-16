@@ -93,7 +93,16 @@ yarn.lock
 pnpm-lock.yaml
 .env*.local
 
+# SQLite databases
+*.db
+
 # Kubernetes/Docker binaries (downloaded)
 kubectl
 minikube*
 get-docker.sh
+
+# Coverage
+coverage.xml
+
+# Egg info
+*.egg-info/

@@ -1,0 +1,58 @@
+# Dapr Cron Binding Component for Scheduled Reminder Checks
+# This component triggers the backend reminder service every 5 minutes
+# to check for tasks with due dates approaching
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: reminder-cron
+  namespace: default
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+    # Schedule format: "*/5 * * * *" = every 5 minutes
+    # For production, consider: "*/1 * * * *" for minute-level precision
+    - name: schedule
+      value: "*/5 * * * *"
+    # Direction: input binding (Dapr calls our app)
+    - name: direction
+      value: "input"
+scopes:
+  # Only backend service should receive cron triggers
+  - todo-backend
+---
+# Additional cron for recurring task generation (runs every hour)
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: recurring-task-cron
+  namespace: default
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+    # Run every hour at minute 0
+    - name: schedule
+      value: "0 * * * *"
+    - name: direction
+      value: "input"
+scopes:
+  - todo-backend
+---
+# Daily cleanup cron for old notifications (runs at midnight)
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: cleanup-cron
+  namespace: default
+spec:
+  type: bindings.cron
+  version: v1
+  metadata:
+    # Run daily at midnight UTC
+    - name: schedule
+      value: "0 0 * * *"
+    - name: direction
+      value: "input"
+scopes:
+  - todo-backend

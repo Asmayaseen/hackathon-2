@@ -1,0 +1,112 @@
+# Dapr Service Invocation Configuration
+# This file configures service-to-service communication via Dapr sidecars
+# Benefits: Automatic retries, mTLS, service discovery, load balancing
+
+# Note: Service Invocation doesn't require a component file in Dapr 1.x+
+# It's enabled by default. This file documents the configuration and provides
+# middleware settings for enhanced reliability.
+
+---
+# Retry Resiliency Policy for Service Invocation
+apiVersion: dapr.io/v1alpha1
+kind: Resiliency
+metadata:
+  name: service-invocation-resiliency
+  namespace: default
+spec:
+  # Retry policies
+  policies:
+    retries:
+      # Default retry policy for all service invocations
+      serviceRetry:
+        policy: constant
+        duration: 1s
+        maxRetries: 3
+
+      # More aggressive retry for critical services
+      criticalServiceRetry:
+        policy: exponential
+        maxInterval: 10s
+        maxRetries: 5
+
+    # Circuit breaker to prevent cascading failures
+    circuitBreakers:
+      serviceBreaker:
+        maxRequests: 10
+        interval: 10s
+        timeout: 30s
+        trip: consecutiveFailures >= 5
+
+    # Timeout policies
+    timeouts:
+      generalTimeout: 30s
+      fastTimeout: 5s
+      slowTimeout: 60s
+
+  # Apply policies to specific targets
+  targets:
+    apps:
+      # Backend service configuration
+      todo-backend:
+        retry: serviceRetry
+        circuitBreaker: serviceBreaker
+        timeout: generalTimeout
+
+      # Notification service - faster timeouts, more retries
+      notification-service:
+        retry: criticalServiceRetry
+        circuitBreaker: serviceBreaker
+        timeout: fastTimeout
+
+---
+# Access Control for Service Invocation
+# Restricts which services can call which endpoints
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: service-invocation-config
+  namespace: default
+spec:
+  # Enable mTLS for service-to-service communication
+  mtls:
+    enabled: true
+    workloadCertTTL: "24h"
+    allowedClockSkew: "15m"
+
+  # Access control policies
+  accessControl:
+    defaultAction: deny
+    trustDomain: "public"
+    policies:
+      # Frontend can call backend
+      - appId: todo-frontend
+        defaultAction: deny
+        trustDomain: "public"
+        namespace: "default"
+        operations:
+          - name: /api/*
+            httpVerb: ["GET", "POST", "PUT", "DELETE", "PATCH"]
+            action: allow
+
+      # Backend can call notification service
+      - appId: todo-backend
+        defaultAction: deny
+        trustDomain: "public"
+        namespace: "default"
+        operations:
+          - name: /api/notify
+            httpVerb: ["POST"]
+            action: allow
+          - name: /health
+            httpVerb: ["GET"]
+            action: allow
+
+      # Notification service can call backend for task details
+      - appId: notification-service
+        defaultAction: deny
+        trustDomain: "public"
+        namespace: "default"
+        operations:
+          - name: /api/*/tasks/*
+            httpVerb: ["GET"]
+            action: allow

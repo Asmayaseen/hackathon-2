@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head><title>Clear Cache</title></head>
+<body>
+<h1>🧹 Clearing Browser Cache...</h1>
+<script>
+  // Clear ALL storage
+  localStorage.clear();
+  sessionStorage.clear();
+  
+  // Clear service workers
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(registrations => {
+      for(let registration of registrations) {
+        registration.unregister();
+      }
+    });
+  }
+  
+  // Clear caches
+  if ('caches' in window) {
+    caches.keys().then(names => {
+      for (let name of names) caches.delete(name);
+    });
+  }
+  
+  console.log('✅ All caches cleared!');
+  alert('✅ Cache cleared! Now go to: http://localhost:3000/settings');
+  
+  // Redirect after 2 seconds
+  setTimeout(() => {
+    window.location.href = 'http://localhost:3000/settings';
+  }, 2000);
+</script>
+</body>
+</html>
