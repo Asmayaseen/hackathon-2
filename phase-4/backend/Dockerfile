@@ -25,6 +25,7 @@ RUN pip install --no-cache-dir uv
 COPY . .
 
 # Install dependencies with UV from pyproject.toml
+ENV UV_HTTP_TIMEOUT=120
 RUN uv pip install --system --no-cache .
 
 # ============================================
