@@ -1,0 +1,125 @@
+# Dapr Pub/Sub Component for Redpanda Cloud (Managed Kafka)
+# This configuration connects to Redpanda Cloud's serverless Kafka service
+#
+# SETUP INSTRUCTIONS:
+# 1. Sign up at https://redpanda.com/cloud (free tier available)
+# 2. Create a Serverless cluster
+# 3. Create topics: task-events, reminders, task-updates
+# 4. Generate SCRAM credentials (username/password)
+# 5. Create Kubernetes secret with credentials (see below)
+#
+# CREATE SECRET:
+# kubectl create secret generic redpanda-credentials \
+#   --from-literal=username='YOUR_REDPANDA_USERNAME' \
+#   --from-literal=password='YOUR_REDPANDA_PASSWORD'
+
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: kafka-pubsub
+  namespace: default
+spec:
+  type: pubsub.kafka
+  version: v1
+  metadata:
+    # Redpanda Cloud Bootstrap Server
+    # Format: <cluster-id>.<region>.cloud.redpanda.com:9092
+    - name: brokers
+      secretKeyRef:
+        name: redpanda-credentials
+        key: brokers
+      # Example: value: "abc123.us-east-1.cloud.redpanda.com:9092"
+
+    # Authentication - SASL/SCRAM-SHA-256
+    - name: authType
+      value: "password"
+
+    - name: saslUsername
+      secretKeyRef:
+        name: redpanda-credentials
+        key: username
+
+    - name: saslPassword
+      secretKeyRef:
+        name: redpanda-credentials
+        key: password
+
+    - name: saslMechanism
+      value: "SCRAM-SHA-256"
+
+    # TLS Configuration (required for Redpanda Cloud)
+    - name: tls
+      value: "true"
+
+    - name: tlsSkipVerify
+      value: "false"
+
+    # Consumer Group
+    - name: consumerGroup
+      value: "todo-service"
+
+    # Initial offset for new consumers
+    - name: initialOffset
+      value: "oldest"
+
+    # Disable auto-commit (Dapr handles acknowledgment)
+    - name: disableAutoCommit
+      value: "true"
+
+    # Max message bytes (1MB default)
+    - name: maxMessageBytes
+      value: "1048576"
+
+    # Client ID for identification
+    - name: clientID
+      value: "todo-app-dapr"
+
+    # Retry configuration
+    - name: consumeRetryInterval
+      value: "1s"
+
+---
+# Alternative: Confluent Cloud Configuration
+# Uncomment this section if using Confluent Cloud instead of Redpanda
+#
+# CREATE SECRET FOR CONFLUENT:
+# kubectl create secret generic confluent-credentials \
+#   --from-literal=brokers='<cluster>.confluent.cloud:9092' \
+#   --from-literal=api-key='YOUR_API_KEY' \
+#   --from-literal=api-secret='YOUR_API_SECRET'
+
+# apiVersion: dapr.io/v1alpha1
+# kind: Component
+# metadata:
+#   name: kafka-pubsub-confluent
+#   namespace: default
+# spec:
+#   type: pubsub.kafka
+#   version: v1
+#   metadata:
+#     - name: brokers
+#       secretKeyRef:
+#         name: confluent-credentials
+#         key: brokers
+#
+#     - name: authType
+#       value: "password"
+#
+#     - name: saslUsername
+#       secretKeyRef:
+#         name: confluent-credentials
+#         key: api-key
+#
+#     - name: saslPassword
+#       secretKeyRef:
+#         name: confluent-credentials
+#         key: api-secret
+#
+#     - name: saslMechanism
+#       value: "PLAIN"
+#
+#     - name: tls
+#       value: "true"
+#
+#     - name: consumerGroup
+#       value: "todo-service"

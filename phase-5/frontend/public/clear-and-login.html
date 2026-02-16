@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clearing Old Tokens...</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            max-width: 500px;
+        }
+        h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        .status {
+            font-size: 18px;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+        .success {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .info {
+            margin-top: 20px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Clearing Old Tokens</h1>
+        <div class="spinner"></div>
+        <div class="status" id="status">Please wait...</div>
+        <div class="info" id="info"></div>
+    </div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const infoEl = document.getElementById('info');
+
+        async function clearEverything() {
+            try {
+                // Step 1: Check what's in storage
+                const oldToken = localStorage.getItem('token');
+                const oldUserId = localStorage.getItem('userId');
+
+                statusEl.innerHTML = '🔍 Checking storage...';
+                await sleep(500);
+
+                if (oldToken) {
+                    infoEl.innerHTML = `Found old token: ${oldToken.substring(0, 30)}...<br>User ID: ${oldUserId}`;
+                } else {
+                    infoEl.innerHTML = 'No tokens found in storage';
+                }
+
+                await sleep(1000);
+
+                // Step 2: Clear localStorage
+                statusEl.innerHTML = '🗑️ Clearing localStorage...';
+                localStorage.clear();
+                await sleep(500);
+
+                // Step 3: Clear sessionStorage
+                statusEl.innerHTML = '🗑️ Clearing sessionStorage...';
+                sessionStorage.clear();
+                await sleep(500);
+
+                // Step 4: Clear cookies
+                statusEl.innerHTML = '🗑️ Clearing cookies...';
+                document.cookie.split(";").forEach(function(c) {
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
+                });
+                await sleep(500);
+
+                // Step 5: Clear IndexedDB
+                statusEl.innerHTML = '🗑️ Clearing IndexedDB...';
+                if (window.indexedDB) {
+                    try {
+                        const dbs = await indexedDB.databases();
+                        for (const db of dbs) {
+                            await indexedDB.deleteDatabase(db.name);
+                        }
+                    } catch (e) {
+                        console.log('IndexedDB clear skipped:', e);
+                    }
+                }
+                await sleep(500);
+
+                // Step 6: Clear Cache
+                statusEl.innerHTML = '🗑️ Clearing cache...';
+                if ('caches' in window) {
+                    const names = await caches.keys();
+                    await Promise.all(names.map(name => caches.delete(name)));
+                }
+                await sleep(500);
+
+                // Step 7: Verify cleared
+                statusEl.innerHTML = '✅ Verifying...';
+                const newToken = localStorage.getItem('token');
+                const newUserId = localStorage.getItem('userId');
+
+                await sleep(500);
+
+                if (!newToken && !newUserId) {
+                    statusEl.innerHTML = '<span class="success">✅ All storage cleared successfully!</span>';
+                    infoEl.innerHTML = `
+                        <strong>Redirecting to login in 3 seconds...</strong><br><br>
+                        Use these credentials:<br>
+                        Email: asmayaseen9960@gmail.com<br>
+                        Password: Evolution@123
+                    `;
+
+                    await sleep(3000);
+                    window.location.href = '/login';
+                } else {
+                    statusEl.innerHTML = '❌ Something went wrong';
+                    infoEl.innerHTML = 'Please clear browser cache manually (Ctrl+Shift+Delete)';
+                }
+
+            } catch (error) {
+                statusEl.innerHTML = '❌ Error: ' + error.message;
+                infoEl.innerHTML = 'Please try clearing manually:<br>Press F12 → Application → Clear site data';
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Auto-start on page load
+        clearEverything();
+    </script>
+</body>
+</html>

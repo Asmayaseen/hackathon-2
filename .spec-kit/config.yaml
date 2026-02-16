@@ -1,6 +1,6 @@
 name: evolution-todo
-version: "2.0"
-phase: phase-2-fullstack
+version: "5.0"
+phase: phase-5-cloud
 
 structure:
   specs_dir: specs
@@ -25,33 +25,47 @@ phases:
 
   - name: phase-2-fullstack
     description: Full-Stack Web Application
-    features: [task-crud, authentication]
-    status: in-progress
+    features: [task-crud, authentication, search, stats, preferences, bulk, export-import]
+    status: completed
     deliverables:
       - backend/ (FastAPI + SQLModel + Neon DB)
-      - frontend/ (Next.js 16 + Better Auth)
+      - frontend/ (Next.js 16 + JWT Auth)
       - specs/ (All specifications)
-    requirements:
-      - Implement all 5 Basic Level features
-      - Create 6 RESTful API endpoints
-      - Build responsive frontend interface
-      - Store data in Neon PostgreSQL
-      - Authentication with Better Auth + JWT
 
   - name: phase-3-chatbot
     description: AI-Powered Todo Chatbot
-    features: [task-crud, authentication, chatbot-interface, mcp-server]
-    status: not-started
+    features: [task-crud, authentication, chatbot-interface, mcp-server, chatkit, voice]
+    status: completed
+    deliverables:
+      - backend/agent.py (OpenAI Agents SDK)
+      - backend/mcp_server.py (11 MCP tools)
+      - backend/routes/chat.py (Stateless chat endpoint)
+      - backend/routes/chatkit.py (ChatKit integration)
+      - backend/routes/voice.py (Whisper transcription)
+      - frontend/src/components/chat/ (ChatKit UI)
 
   - name: phase-4-k8s-local
     description: Local Kubernetes Deployment
     features: [task-crud, authentication, chatbot-interface, docker, minikube, helm]
-    status: not-started
+    status: completed
+    deliverables:
+      - backend/Dockerfile
+      - frontend/Dockerfile
+      - docker-compose.yml
+      - helm/todo-app/ (Helm charts)
+      - scripts/deploy-minikube.sh
 
   - name: phase-5-cloud
     description: Advanced Cloud Deployment
-    features: [task-crud, authentication, chatbot-interface, kafka, dapr, cloud-k8s]
-    status: not-started
+    features: [task-crud, authentication, chatbot-interface, kafka, dapr, cloud-k8s, ci-cd, monitoring]
+    status: completed
+    deliverables:
+      - dapr-components/ (pub/sub, state, secrets, cron, service-invocation)
+      - kafka/ (Strimzi cluster + topics)
+      - notification-service/ (Reminder microservice)
+      - helm/ (Cloud-ready Helm charts)
+      - monitoring/ (Prometheus, Grafana, Loki)
+      - .github/workflows/deploy.yaml (CI/CD)
 
 features:
   basic-crud:
@@ -75,18 +89,37 @@ features:
   task-crud:
     name: Task CRUD Operations (Web)
     spec: specs/features/task-crud.md
-    status: in-progress
+    status: completed
     phase: phase-2-fullstack
     api: specs/api/rest-endpoints.md
     database: specs/database/schema.md
 
   authentication:
-    name: User Authentication (Better Auth + JWT)
+    name: User Authentication (JWT)
     spec: specs/features/authentication.md
-    status: in-progress
+    status: completed
     phase: phase-2-fullstack
     api: specs/api/rest-endpoints.md
     database: specs/database/schema.md
+
+  chatbot:
+    name: AI Chatbot (Agents SDK + MCP)
+    spec: specs/phase-3-chatbot/spec.md
+    status: completed
+    phase: phase-3-chatbot
+    api: specs/api/mcp-tools.md
+
+  voice:
+    name: Voice Commands (Whisper)
+    spec: specs/phase-3-chatbot/spec.md
+    status: completed
+    phase: phase-3-chatbot
+
+  event-driven:
+    name: Event-Driven Architecture (Kafka + Dapr)
+    spec: specs/features/phase-v-integration.md
+    status: completed
+    phase: phase-5-cloud
 
 tech_stack:
   phase_1:
@@ -98,44 +131,44 @@ tech_stack:
     frontend:
       framework: Next.js 16+
       styling: Tailwind CSS 4.x
-      components: shadcn/ui
-      icons: Lucide React
       animations: Framer Motion
       theme: next-themes
-      auth: Better Auth
     backend:
       framework: FastAPI
       orm: SQLModel
       database: Neon Serverless PostgreSQL
-      auth: JWT
-    tools: [Claude Code, Spec-Kit Plus, Vercel, Railway/Render]
+      auth: JWT (PyJWT + HS256)
+    tools: [Claude Code, Spec-Kit Plus, Vercel]
 
   phase_3:
     frontend: OpenAI ChatKit
     ai_framework: OpenAI Agents SDK
     mcp_server: Official MCP SDK
+    voice: OpenAI Whisper / Groq
 
   phase_4:
-    containerization: Docker + Docker AI (Gordon)
+    containerization: Docker
     orchestration: Kubernetes (Minikube)
     package_manager: Helm Charts
     ai_devops: [kubectl-ai, kagent]
 
   phase_5:
-    event_streaming: Kafka (Redpanda Cloud/Strimzi)
-    app_runtime: Dapr
-    cloud: DigitalOcean DOKS / GKE / AKS
+    event_streaming: Kafka (Strimzi on K8s)
+    app_runtime: Dapr (Pub/Sub, State, Bindings, Secrets, Service Invocation)
+    cloud: AKS / GKE / DOKS
+    ci_cd: GitHub Actions
+    monitoring: Prometheus + Grafana + Loki
 
 constitution:
   file: .specify/memory/constitution.md
-  version: "1.0.0"
+  version: "1.1.0"
   principles:
     - Spec-Driven Development (NON-NEGOTIABLE)
     - Phased Evolution
     - Technology Stack Adherence
     - Independent User Stories
-    - Test-Driven Development (Conditional)
     - Stateless Architecture
+    - Cloud-Native Architecture
     - Documentation and Traceability
 
 development_workflow:
@@ -170,7 +203,7 @@ submission:
 
 metadata:
   created: 2025-12-28
-  updated: 2025-12-28
-  current_phase: phase-2-fullstack
+  updated: 2026-02-11
+  current_phase: phase-5-cloud
   repository: https://github.com/Asmayaseen/hackathon-2
   maintainer: asmayaseen

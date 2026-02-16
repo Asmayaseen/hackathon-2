@@ -185,6 +185,76 @@ async def get_user_notifications(user_id: str, limit: int = 20):
         }
 
 
+# =============================================================================
+# Dapr Service Invocation Endpoint
+# =============================================================================
+# This endpoint can be called by other services via Dapr service invocation
+# Example: http://localhost:3500/v1.0/invoke/notification-service/method/api/notify
+# =============================================================================
+
+class NotifyRequest(BaseModel):
+    """Direct notification request via Dapr service invocation."""
+    user_id: str
+    task_id: int
+    title: str
+    message: str
+    notification_type: str = "reminder"
+
+
+@app.post("/api/notify")
+async def send_notification(payload: NotifyRequest):
+    """
+    Send a notification via Dapr Service Invocation.
+
+    Called by backend service via:
+    POST http://localhost:3500/v1.0/invoke/notification-service/method/api/notify
+
+    This bypasses Kafka for synchronous notification delivery when needed.
+    """
+    logger.info(f"Service invocation: notify user {payload.user_id}")
+
+    if engine:
+        with Session(engine) as session:
+            notification = NotificationRecord(
+                task_id=payload.task_id,
+                user_id=payload.user_id,
+                title=payload.title,
+                notification_type=payload.notification_type,
+                status="pending"
+            )
+            session.add(notification)
+            session.commit()
+            session.refresh(notification)
+
+            # Mock delivery
+            notification.status = "sent"
+            notification.sent_at = datetime.utcnow()
+            session.add(notification)
+            session.commit()
+
+            logger.info(f"Direct notification sent: {notification.id}")
+
+            return {
+                "success": True,
+                "notification_id": notification.id,
+                "status": notification.status
+            }
+
+    return {"success": True, "message": "Notification processed (no persistence)"}
+
+
+# Dapr Service-to-Service health endpoint
+@app.get("/api/health")
+async def service_health():
+    """Health check for Dapr service invocation."""
+    return {
+        "status": "healthy",
+        "service": "notification-service",
+        "dapr_app_id": "notification-service",
+        "capabilities": ["pub/sub", "service-invocation"]
+    }
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)

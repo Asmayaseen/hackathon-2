@@ -1,0 +1,239 @@
+# Prometheus Stack Values for Todo App Monitoring
+# Deploy with: helm install prometheus prometheus-community/kube-prometheus-stack -f prometheus-values.yaml
+
+# Global settings
+fullnameOverride: "todo-prometheus"
+namespaceOverride: "monitoring"
+
+# Prometheus Server Configuration
+prometheus:
+  enabled: true
+  prometheusSpec:
+    # Scrape interval
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+
+    # Resource limits for hackathon (small footprint)
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 200m
+        memory: 256Mi
+
+    # Retention
+    retention: 7d
+    retentionSize: "5GB"
+
+    # Storage (ephemeral for hackathon)
+    storageSpec: {}
+
+    # Service monitor selector - scrape our todo app services
+    serviceMonitorSelector:
+      matchLabels:
+        release: prometheus
+
+    # Additional scrape configs for Dapr sidecars
+    additionalScrapeConfigs:
+      # Scrape Dapr sidecar metrics from all pods
+      - job_name: 'dapr-sidecars'
+        kubernetes_sd_configs:
+          - role: pod
+        relabel_configs:
+          # Only scrape pods with Dapr annotation
+          - source_labels: [__meta_kubernetes_pod_annotation_dapr_io_enabled]
+            action: keep
+            regex: "true"
+          # Scrape the Dapr metrics port (9090)
+          - source_labels: [__meta_kubernetes_pod_annotation_dapr_io_metrics_port]
+            action: replace
+            target_label: __address__
+            regex: (.+)
+            replacement: ${1}:9090
+          # Add pod name label
+          - source_labels: [__meta_kubernetes_pod_name]
+            action: replace
+            target_label: pod
+          # Add namespace label
+          - source_labels: [__meta_kubernetes_namespace]
+            action: replace
+            target_label: namespace
+          # Add Dapr app-id label
+          - source_labels: [__meta_kubernetes_pod_annotation_dapr_io_app_id]
+            action: replace
+            target_label: dapr_app_id
+
+      # Scrape FastAPI/Uvicorn metrics (if exposed)
+      - job_name: 'todo-backend'
+        kubernetes_sd_configs:
+          - role: service
+            namespaces:
+              names:
+                - default
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            action: keep
+            regex: todo-backend
+          - source_labels: [__address__]
+            action: replace
+            target_label: __address__
+            regex: (.+)
+            replacement: ${1}:8000
+
+      # Scrape Kafka (Strimzi) metrics
+      - job_name: 'kafka-metrics'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - kafka
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_strimzi_io_kind]
+            action: keep
+            regex: Kafka
+          - source_labels: [__address__]
+            action: replace
+            regex: (.+):.*
+            replacement: ${1}:9404
+            target_label: __address__
+
+# Grafana Configuration
+grafana:
+  enabled: true
+  fullnameOverride: "todo-grafana"
+
+  # Admin credentials
+  adminUser: admin
+  adminPassword: todo-admin-2026  # Change in production!
+
+  # Resource limits
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+  # Service type for local access
+  service:
+    type: NodePort
+    nodePort: 30300
+
+  # Persistence (disabled for hackathon)
+  persistence:
+    enabled: false
+
+  # Default dashboards
+  defaultDashboardsEnabled: true
+  defaultDashboardsTimezone: utc
+
+  # Data sources (auto-configured)
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://todo-prometheus-prometheus:9090
+          access: proxy
+          isDefault: true
+        - name: Loki
+          type: loki
+          url: http://loki:3100
+          access: proxy
+
+  # Dashboard providers
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: 'default'
+          orgId: 1
+          folder: 'Todo App'
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+
+  # Pre-configured dashboards
+  dashboards:
+    default:
+      # Dapr Dashboard
+      dapr-dashboard:
+        gnetId: 17457  # Dapr community dashboard
+        revision: 1
+        datasource: Prometheus
+
+      # Kubernetes Cluster
+      kubernetes-cluster:
+        gnetId: 7249
+        revision: 1
+        datasource: Prometheus
+
+# AlertManager Configuration
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
+
+  # Basic alerting config (email/slack can be added)
+  config:
+    global:
+      resolve_timeout: 5m
+
+    route:
+      group_by: ['alertname', 'namespace']
+      group_wait: 10s
+      group_interval: 5m
+      repeat_interval: 1h
+      receiver: 'null'  # Change to real receiver for production
+
+    receivers:
+      - name: 'null'
+
+# Node Exporter (for node metrics)
+nodeExporter:
+  enabled: true
+  resources:
+    limits:
+      cpu: 100m
+      memory: 64Mi
+    requests:
+      cpu: 50m
+      memory: 32Mi
+
+# Kube State Metrics
+kubeStateMetrics:
+  enabled: true
+
+# Prometheus Operator
+prometheusOperator:
+  enabled: true
+  resources:
+    limits:
+      cpu: 200m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Disable components not needed for hackathon
+kubeApiServer:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false

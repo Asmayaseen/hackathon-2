@@ -45,12 +45,13 @@ async def get_task_statistics(
 
     if not tasks:
         return {
-            "total_tasks": 0,
-            "completed_tasks": 0,
+            "total": 0,
+            "completed": 0,
+            "pending": 0,
             "completion_rate": 0,
             "priority_distribution": {"high": 0, "medium": 0, "low": 0, "none": 0},
-            "overdue_count": 0,
-            "upcoming_count": 0
+            "overdue": 0,
+            "upcoming": 0
         }
 
     total = len(tasks)
@@ -70,13 +71,13 @@ async def get_task_statistics(
     upcoming = sum(1 for t in tasks if not t.completed and t.due_date and now <= t.due_date <= next_7_days)
 
     return {
-        "total_tasks": total,
-        "completed_tasks": completed,
+        "total": total,
+        "completed": completed,
+        "pending": total - completed,
         "completion_rate": round((completed / total) * 100, 2),
         "priority_distribution": priority_dist,
-        "overdue_count": overdue,
-        "upcoming_count": upcoming,
-        "active_count": total - completed
+        "overdue": overdue,
+        "upcoming": upcoming
     }
 
 
