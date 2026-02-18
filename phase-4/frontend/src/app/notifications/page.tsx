@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { api, Notification } from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { Bell, Check, CheckCheck, Trash2, Clock, AlertTriangle, Loader2, MessageSquare, BellOff } from 'lucide-react';
 
 export default function NotificationsPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -77,12 +79,12 @@ export default function NotificationsPage() {
   const generateMessage = (notification: Notification) => {
     const type = notification.notification_type.toLowerCase();
     if (type.includes('reminder')) {
-      return `Task reminder scheduled for ${new Date(notification.scheduled_time).toLocaleString()}`;
+      return `${t('notifications.taskReminder')} ${new Date(notification.scheduled_time).toLocaleString()}`;
     }
     if (type.includes('overdue')) {
-      return 'Task is now overdue and requires attention';
+      return t('notifications.taskOverdue');
     }
-    return `Notification for task ID ${notification.task_id}`;
+    return `${t('notifications.notificationForTask')} ${notification.task_id}`;
   };
 
   const unreadCount = Array.isArray(notifications) ? notifications.filter(n => !n.sent).length : 0;
@@ -120,9 +122,9 @@ export default function NotificationsPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold uppercase tracking-wider bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">
-                  Neural Alerts
+                  {t('notifications.neuralAlerts')}
                 </h1>
-                <p className="text-muted-foreground uppercase text-xs tracking-[0.2em]">Signal synchronization inbox</p>
+                <p className="text-muted-foreground uppercase text-xs tracking-[0.2em]">{t('notifications.signalSync')}</p>
               </div>
             </div>
 
@@ -131,7 +133,7 @@ export default function NotificationsPage() {
                 onClick={handleMarkAllRead}
                 className="flex items-center space-x-2 px-4 py-2 bg-cyan-500/10 border border-cyan-400/30 text-cyan-400 rounded-xl hover:bg-cyan-500/20 transition-all text-xs font-bold uppercase tracking-widest"
               >
-                Clear All Signals
+                {t('notifications.clearAllSignals')}
               </button>
             )}
           </div>
@@ -163,7 +165,7 @@ export default function NotificationsPage() {
                             {generateMessage(n)}
                           </p>
                           <div className="flex items-center gap-4 mt-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
-                             <span>Source: Neural Node {n.task_id || 'System'}</span>
+                             <span>{t('notifications.source')} {n.task_id || t('notifications.system')}</span>
                              <span>•</span>
                              <span>{new Date(n.created_at).toLocaleDateString()}</span>
                           </div>
@@ -174,7 +176,7 @@ export default function NotificationsPage() {
                         <button
                           onClick={() => handleMarkRead(n.id)}
                           className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 opacity-0 group-hover:opacity-100 transition-all hover:bg-cyan-500/20"
-                          title="Acknowledge Signal"
+                          title={t('notifications.acknowledgeSignal')}
                         >
                           <Check className="w-5 h-5" />
                         </button>
@@ -189,9 +191,9 @@ export default function NotificationsPage() {
                     <BellOff className="w-16 h-16 text-muted-foreground/20" />
                     <div className="absolute inset-0 bg-cyan-500/5 blur-2xl rounded-full" />
                  </div>
-                 <h2 className="text-xl font-bold uppercase tracking-[0.2em] text-muted-foreground/50 mb-2">Signal Silence</h2>
+                 <h2 className="text-xl font-bold uppercase tracking-[0.2em] text-muted-foreground/50 mb-2">{t('notifications.signalSilence')}</h2>
                  <p className="text-sm text-muted-foreground/40 max-w-[280px] leading-relaxed">
-                    No active notifications detected on the neural network at this time.
+                    {t('notifications.noActiveNotifications')}
                  </p>
               </div>
             )}
@@ -199,7 +201,7 @@ export default function NotificationsPage() {
 
           <div className="flex justify-center p-4">
              <p className="text-[10px] uppercase tracking-widest text-muted-foreground/50 font-medium">
-                System Time: {new Date().toISOString()} | Uplink Signal: 100%
+                {t('notifications.systemTime')} {new Date().toISOString()} | {t('notifications.uplinkSignal')}
              </p>
           </div>
         </div>

@@ -9,9 +9,11 @@ import StatsCard from '../../components/StatsCard';
 import ProgressBar from '../../components/ProgressBar';
 import Navbar from '../../components/layout/Navbar';
 import { api, TasksResponse } from '../../lib/api';
+import { useTranslation } from '../../lib/i18n';
 
 export default function TasksPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [user, setUser] = useState<{ id: string; email: string; name?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -111,7 +113,7 @@ export default function TasksPage() {
               </svg>
             </div>
           </div>
-          <p className="text-cyan-400 uppercase tracking-wider text-sm">Initializing Neural Interface...</p>
+          <p className="text-cyan-400 uppercase tracking-wider text-sm">{t('tasks.initializingInterface')}</p>
         </div>
       </div>
     );
@@ -141,11 +143,11 @@ export default function TasksPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <h3 className="text-xl font-bold text-cyan-400 mb-6 uppercase tracking-wider">Data Protocols</h3>
+            <h3 className="text-xl font-bold text-cyan-400 mb-6 uppercase tracking-wider">{t('tasks.dataProtocols')}</h3>
 
             <div className="space-y-4">
               <div className="p-4 bg-background/50 rounded-xl border border-border">
-                <p className="text-sm font-medium mb-3">Export Mission Data</p>
+                <p className="text-sm font-medium mb-3">{t('tasks.exportMissionData')}</p>
                 <div className="flex gap-2">
                   <button
                     onClick={handleExportJson}
@@ -163,13 +165,13 @@ export default function TasksPage() {
               </div>
 
               <div className="p-4 bg-background/50 rounded-xl border border-border">
-                <p className="text-sm font-medium mb-3">Import Neural Stream</p>
+                <p className="text-sm font-medium mb-3">{t('tasks.importNeuralStream')}</p>
                 <label className={`
                   flex items-center justify-center w-full py-3 border-2 border-dashed border-cyan-500/30 rounded-lg cursor-pointer hover:border-cyan-500/50 transition-all
                   ${importLoading ? 'opacity-50 pointer-events-none' : ''}
                 `}>
                   <span className="text-xs text-muted-foreground uppercase tracking-wider font-bold">
-                    {importLoading ? 'Processing...' : 'Upload JSON File'}
+                    {importLoading ? t('common.processing') : t('tasks.uploadJsonFile')}
                   </span>
                   <input
                     type="file"
@@ -192,10 +194,9 @@ export default function TasksPage() {
           <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="text-center sm:text-left">
               <h2 className="text-4xl font-bold mb-2">
-                <span className="text-foreground">Mission</span>{' '}
-                <span className="bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">Control</span>
+                <span className="bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">{t('tasks.missionControl')}</span>
               </h2>
-              <p className="text-muted-foreground">Neural task management interface active</p>
+              <p className="text-muted-foreground">{t('tasks.neuralTaskInterface')}</p>
             </div>
 
             {/* Export/Import Button */}
@@ -209,7 +210,7 @@ export default function TasksPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                 </svg>
                 <span className="font-bold text-xs sm:text-sm uppercase tracking-wider text-cyan-400 group-hover:text-cyan-300 transition-colors">
-                  Data Ops
+                  {t('tasks.dataOps')}
                 </span>
               </div>
             </button>
@@ -218,19 +219,19 @@ export default function TasksPage() {
           {/* Stats Section */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <StatsCard
-              label="Total Tasks"
+              label={t('tasks.totalTasks')}
               value={stats.total}
               icon="total"
               color="cyan"
             />
             <StatsCard
-              label="Pending"
+              label={t('tasks.pending')}
               value={stats.pending}
               icon="pending"
               color="fuchsia"
             />
             <StatsCard
-              label="Completed"
+              label={t('tasks.completed')}
               value={stats.completed}
               icon="completed"
               color="green"

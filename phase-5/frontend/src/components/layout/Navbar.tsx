@@ -6,8 +6,10 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import ThemeToggle from '../ThemeToggle';
 import { LayoutDashboard, CheckSquare, History, Bell, Settings, LogOut, Menu, X, MessageCircle } from 'lucide-react';
+import { useTranslation } from '@/lib/i18n';
 
 export default function Navbar() {
+  const { t } = useTranslation();
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<{ name?: string; email?: string } | null>(null);
@@ -36,12 +38,12 @@ export default function Navbar() {
     icon: React.ReactNode;
     highlight?: boolean;
   }> = [
-    { name: 'Tasks', href: '/tasks', icon: <CheckSquare className="w-5 h-5" /> },
-    { name: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
-    { name: 'AI Chat', href: '/chat', icon: <MessageCircle className="w-5 h-5" />, highlight: true },
-    { name: 'History', href: '/history', icon: <History className="w-5 h-5" /> },
-    { name: 'Notifications', href: '/notifications', icon: <Bell className="w-5 h-5" /> },
-    { name: 'Settings', href: '/settings', icon: <Settings className="w-5 h-5" /> },
+    { name: t('nav.tasks'), href: '/tasks', icon: <CheckSquare className="w-5 h-5" /> },
+    { name: t('nav.dashboard'), href: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" /> },
+    { name: t('nav.aiChat'), href: '/chat', icon: <MessageCircle className="w-5 h-5" />, highlight: true },
+    { name: t('nav.history'), href: '/history', icon: <History className="w-5 h-5" /> },
+    { name: t('nav.notifications'), href: '/notifications', icon: <Bell className="w-5 h-5" /> },
+    { name: t('nav.settings'), href: '/settings', icon: <Settings className="w-5 h-5" /> },
   ];
 
   return (
@@ -59,7 +61,7 @@ export default function Navbar() {
               </div>
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-400 bg-clip-text text-transparent tracking-wider hidden sm:block">
-              NEURAL TASKS
+              {t('auth.neuralTasks')}
             </span>
           </Link>
 
@@ -90,7 +92,7 @@ export default function Navbar() {
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-card/50 rounded-lg border border-cyan-500/10">
               <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
               <span className="text-xs text-muted-foreground max-w-[120px] truncate">
-                {user?.name || user?.email || 'Authenticated'}
+                {user?.name || user?.email || t('common.authenticated')}
               </span>
             </div>
             <ThemeToggle />
@@ -98,7 +100,7 @@ export default function Navbar() {
             <button
               onClick={handleLogout}
               className="hidden sm:flex p-2 rounded-xl bg-card/50 border border-red-500/20 text-red-400 hover:border-red-400 hover:bg-red-500/5 transition-all"
-              title="Logout"
+              title={t('common.logout')}
             >
               <LogOut className="w-5 h-5" />
             </button>
@@ -140,7 +142,7 @@ export default function Navbar() {
               className="flex items-center space-x-3 px-4 py-3 rounded-xl w-full text-red-400 hover:bg-red-500/5 transition-all border border-transparent hover:border-red-500/20"
             >
               <LogOut className="w-5 h-5" />
-              <span className="font-bold tracking-wide uppercase text-sm">Logout Terminal</span>
+              <span className="font-bold tracking-wide uppercase text-sm">{t('common.logoutTerminal')}</span>
             </button>
           </div>
         )}

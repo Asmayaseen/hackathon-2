@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/lib/i18n';
 import Navbar from '@/components/layout/Navbar';
 import StatsCard from '@/components/StatsCard';
 import ProgressBar from '@/components/ProgressBar';
@@ -10,6 +11,7 @@ import { LayoutDashboard, TrendingUp, AlertCircle, Calendar, ArrowUpRight, Loade
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
@@ -83,9 +85,9 @@ export default function DashboardPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <h1 className="text-3xl font-bold uppercase tracking-wider bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">
-                Mission Analytics
+                {t('dashboard.missionAnalytics')}
               </h1>
-              <p className="text-muted-foreground uppercase text-xs tracking-[0.2em]">Neural performance data stream</p>
+              <p className="text-muted-foreground uppercase text-xs tracking-[0.2em]">{t('dashboard.neuralPerformance')}</p>
             </div>
             <div className="flex flex-col sm:flex-row items-end sm:items-center gap-3">
               {/* User Profile Card */}
@@ -94,29 +96,29 @@ export default function DashboardPage() {
                   {userName ? userName.charAt(0).toUpperCase() : (userEmail ? userEmail.charAt(0).toUpperCase() : 'U')}
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-xs font-bold text-foreground">{userName || 'Agent'}</span>
+                  <span className="text-xs font-bold text-foreground">{userName || t('dashboard.agent')}</span>
                   <span className="text-[10px] text-muted-foreground">{userEmail}</span>
                 </div>
               </div>
               <div className="flex items-center gap-2 px-4 py-2 bg-cyan-500/10 border border-cyan-500/20 rounded-xl">
                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                <span className="text-xs font-bold uppercase text-cyan-400 tracking-wider">Live Uplink Active</span>
+                <span className="text-xs font-bold uppercase text-cyan-400 tracking-wider">{t('dashboard.liveUplink')}</span>
               </div>
             </div>
           </div>
 
           {/* Top Row: Mission Overview */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatsCard label="Total Nodes" value={data.total} icon="total" color="cyan" />
-            <StatsCard label="Pending Tasks" value={data.pending} icon="pending" color="fuchsia" />
-            <StatsCard label="Success Rate" value={Math.round(data.completion_rate * 100) / 100 + '%'} icon="completed" color="green" />
+            <StatsCard label={t('dashboard.totalNodes')} value={data.total} icon="total" color="cyan" />
+            <StatsCard label={t('dashboard.pendingTasks')} value={data.pending} icon="pending" color="fuchsia" />
+            <StatsCard label={t('dashboard.successRate')} value={Math.round(data.completion_rate * 100) / 100 + '%'} icon="completed" color="green" />
             <div className="relative bg-card/80 backdrop-blur-sm p-6 rounded-2xl border-2 border-red-500/30 hover:shadow-[0_0_30px_rgba(239,68,68,0.2)] transition-all card-hover">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center shadow-lg">
                   <AlertCircle className="text-white w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground uppercase tracking-wide">Overdue</p>
+                  <p className="text-sm text-muted-foreground uppercase tracking-wide">{t('dashboard.overdueLabel')}</p>
                   <p className="text-3xl font-bold text-red-500">{data.overdue || 0}</p>
                 </div>
               </div>
@@ -128,14 +130,14 @@ export default function DashboardPage() {
             <div className="lg:col-span-2 bg-card/50 backdrop-blur-xl border border-cyan-500/10 rounded-2xl p-6 space-y-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" /> Productivity Stream
+                  <TrendingUp className="w-4 h-4" /> {t('dashboard.productivityStream')}
                 </h3>
-                <span className="text-xs text-muted-foreground uppercase font-bold tracking-widest">Neural Index: Stable</span>
+                <span className="text-xs text-muted-foreground uppercase font-bold tracking-widest">{t('dashboard.neuralIndexStable')}</span>
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between text-sm font-bold mb-2">
-                   <span className="uppercase tracking-widest">Global Completion Status</span>
+                   <span className="uppercase tracking-widest">{t('dashboard.globalCompletion')}</span>
                    <span className="text-cyan-400">{Math.round((data.completed / (data.total || 1)) * 100)}%</span>
                 </div>
                 <ProgressBar completed={data.completed} total={data.total} />
@@ -175,15 +177,15 @@ export default function DashboardPage() {
             {/* Priority Matrix */}
             <div className="bg-card/50 backdrop-blur-xl border border-cyan-500/10 rounded-2xl p-6 space-y-6">
               <h3 className="text-sm font-bold text-fuchsia-400 uppercase tracking-widest flex items-center gap-2">
-                <PieChart className="w-4 h-4" /> Priority Matrix
+                <PieChart className="w-4 h-4" /> {t('dashboard.priorityMatrix')}
               </h3>
 
               <div className="space-y-4">
                 {[
-                  { label: 'Critical', key: 'high', color: 'bg-red-500', text: 'text-red-400' },
-                  { label: 'Standard', key: 'medium', color: 'bg-yellow-500', text: 'text-yellow-400' },
-                  { label: 'Low Trace', key: 'low', color: 'bg-green-500', text: 'text-green-400' },
-                  { label: 'Default', key: 'none', color: 'bg-slate-500', text: 'text-slate-400' },
+                  { label: t('dashboard.critical'), key: 'high', color: 'bg-red-500', text: 'text-red-400' },
+                  { label: t('dashboard.standard'), key: 'medium', color: 'bg-yellow-500', text: 'text-yellow-400' },
+                  { label: t('dashboard.lowTrace'), key: 'low', color: 'bg-green-500', text: 'text-green-400' },
+                  { label: t('dashboard.default'), key: 'none', color: 'bg-slate-500', text: 'text-slate-400' },
                 ].map((p) => {
                   const count = data.priority_distribution?.[p.key] || 0;
                   const percent = Math.round((count / (data.total || 1)) * 100);
@@ -210,8 +212,8 @@ export default function DashboardPage() {
                     <Calendar className="w-4 h-4 text-fuchsia-400" />
                   </div>
                   <div>
-                    <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">Upcoming Actions</p>
-                    <p className="text-lg font-bold text-foreground">{data.upcoming || 0} scheduled</p>
+                    <p className="text-[10px] uppercase text-muted-foreground font-bold tracking-widest">{t('dashboard.upcomingActions')}</p>
+                    <p className="text-lg font-bold text-foreground">{data.upcoming || 0} {t('dashboard.scheduled')}</p>
                   </div>
                 </div>
               </div>
@@ -224,7 +226,7 @@ export default function DashboardPage() {
                onClick={() => router.push('/tasks')}
                className="group flex items-center gap-2 px-8 py-3 bg-card/50 border-2 border-cyan-500/30 rounded-2xl text-cyan-400 font-bold uppercase tracking-[0.2em] hover:bg-cyan-500/10 hover:border-cyan-400 transition-all shadow-[0_0_20px_rgba(0,217,255,0.1)]"
             >
-              Back to Neural Deck
+              {t('dashboard.backToNeuralDeck')}
               <ArrowUpRight className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
             </button>
           </div>

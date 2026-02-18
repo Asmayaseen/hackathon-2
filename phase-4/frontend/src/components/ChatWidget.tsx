@@ -12,6 +12,7 @@ interface Message {
 }
 
 export default function ChatWidget() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     { id: 0, role: 'assistant', content: "Hello! I'm your task management assistant. How can I help you today?" }
@@ -74,7 +75,7 @@ export default function ChatWidget() {
       setMessages(prev => [...prev, {
         id: Date.now() + 1,
         role: 'assistant',
-        content: `Error: ${error.response?.data?.detail || 'Something went wrong'}`
+        content: `${t('chat.errorPrefix')} ${error.response?.data?.detail || t('chat.somethingWentWrong')}`
       }]);
     } finally {
       setIsLoading(false);
@@ -102,9 +103,9 @@ export default function ChatWidget() {
           <div className="p-4 bg-gradient-to-r from-[#00d9ff]/20 to-[#d946ef]/20 border-b border-[rgba(0,217,255,0.2)] flex items-center justify-between">
             <div>
               <h3 className="text-white font-semibold flex items-center gap-2">
-                <span className="text-xl">🤖</span> Evolution Todo AI
+                <span className="text-xl">🤖</span> {t('chat.evolutionTodoAI')}
               </h3>
-              <p className="text-xs text-slate-400">Manage tasks in English or Urdu</p>
+              <p className="text-xs text-slate-400">{t('chat.manageTasksLanguage')}</p>
             </div>
             <button
               onClick={() => setIsOpen(false)}
@@ -150,7 +151,7 @@ export default function ChatWidget() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                placeholder="Type your message..."
+                placeholder={t('chat.typeMessage')}
                 disabled={isLoading}
                 className="flex-1 px-3 py-2 text-sm bg-slate-700/50 border border-[rgba(0,217,255,0.2)] rounded-lg text-white placeholder-slate-400 focus:outline-none focus:border-[#00d9ff]"
               />

@@ -11,7 +11,7 @@ type TabId = 'general' | 'appearance' | 'notifications' | 'security';
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { locale, setLocale } = useTranslation();
+  const { locale, setLocale, t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -239,10 +239,10 @@ export default function SettingsPage() {
   }
 
   const tabs = [
-    { id: 'general' as TabId, icon: <User className="w-4 h-4" />, label: 'General' },
-    { id: 'appearance' as TabId, icon: <Palette className="w-4 h-4" />, label: 'Appearance' },
-    { id: 'notifications' as TabId, icon: <Bell className="w-4 h-4" />, label: 'Notifications' },
-    { id: 'security' as TabId, icon: <Shield className="w-4 h-4" />, label: 'Security' },
+    { id: 'general' as TabId, icon: <User className="w-4 h-4" />, label: t('settings.general') },
+    { id: 'appearance' as TabId, icon: <Palette className="w-4 h-4" />, label: t('settings.appearance') },
+    { id: 'notifications' as TabId, icon: <Bell className="w-4 h-4" />, label: t('settings.notificationsTab') },
+    { id: 'security' as TabId, icon: <Shield className="w-4 h-4" />, label: t('settings.security') },
   ];
 
   return (
@@ -258,9 +258,9 @@ export default function SettingsPage() {
             </div>
             <div>
               <h1 className="text-3xl font-bold uppercase tracking-wider bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">
-                System Preferences
+                {t('settings.systemPreferences')}
               </h1>
-              <p className="text-muted-foreground uppercase text-xs tracking-[0.2em]">Neural interface configurations</p>
+              <p className="text-muted-foreground uppercase text-xs tracking-[0.2em]">{t('settings.neuralInterfaceConfigs')}</p>
             </div>
           </div>
 
@@ -316,11 +316,11 @@ export default function SettingsPage() {
                     {/* Localization */}
                     <section className="space-y-4">
                       <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Globe className="w-4 h-4" /> Localization Protocols
+                        <Globe className="w-4 h-4" /> {t('settings.localizationProtocols')}
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-xs uppercase text-muted-foreground font-bold ml-1">Interface Language</label>
+                          <label className="text-xs uppercase text-muted-foreground font-bold ml-1">{t('settings.interfaceLanguage')}</label>
                           <select
                             value={preferences.language}
                             onChange={(e) => {
@@ -335,7 +335,7 @@ export default function SettingsPage() {
                           </select>
                         </div>
                         <div className="space-y-2">
-                          <label className="text-xs uppercase text-muted-foreground font-bold ml-1">Temporal Zone</label>
+                          <label className="text-xs uppercase text-muted-foreground font-bold ml-1">{t('settings.temporalZone')}</label>
                           <select
                             value={preferences.timezone}
                             onChange={(e) => setPreferences({ ...preferences, timezone: e.target.value })}
@@ -357,10 +357,10 @@ export default function SettingsPage() {
                     {/* Task Defaults */}
                     <section className="space-y-4">
                       <h3 className="text-sm font-bold text-fuchsia-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Clock className="w-4 h-4" /> Task Logic Defaults
+                        <Clock className="w-4 h-4" /> {t('settings.taskLogicDefaults')}
                       </h3>
                       <div className="space-y-2">
-                        <label className="text-xs uppercase text-muted-foreground font-bold ml-1">Default Priority Level</label>
+                        <label className="text-xs uppercase text-muted-foreground font-bold ml-1">{t('settings.defaultPriority')}</label>
                         <div className="flex flex-wrap gap-2">
                           {['none', 'low', 'medium', 'high'].map((p) => (
                             <button
@@ -387,15 +387,15 @@ export default function SettingsPage() {
                     <div className="text-xs text-cyan-400 mb-2">✅ Active Tab: APPEARANCE</div>
                     <section className="space-y-4">
                       <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Palette className="w-4 h-4" /> Visual Interface
+                        <Palette className="w-4 h-4" /> {t('settings.visualInterface')}
                       </h3>
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <label className="text-xs uppercase text-muted-foreground font-bold ml-1">Display Theme</label>
+                          <label className="text-xs uppercase text-muted-foreground font-bold ml-1">{t('settings.displayTheme')}</label>
                           <div className="grid grid-cols-2 gap-3">
                             {[
-                              { value: 'light', icon: <Sun className="w-4 h-4" />, label: 'Light' },
-                              { value: 'dark', icon: <Moon className="w-4 h-4" />, label: 'Dark' },
+                              { value: 'light', icon: <Sun className="w-4 h-4" />, label: t('settings.themeLight') },
+                              { value: 'dark', icon: <Moon className="w-4 h-4" />, label: t('settings.themeDark') },
                             ].map((theme) => (
                               <button
                                 key={theme.value}
@@ -426,7 +426,7 @@ export default function SettingsPage() {
 
                         <div className="p-4 rounded-xl bg-background/30 border border-cyan-500/10">
                           <p className="text-xs text-muted-foreground">
-                            <span className="font-bold text-cyan-400">Neural Tip:</span> Choose Light for bright environments or Dark for reduced eye strain.
+                            {t('settings.neuralTip')}
                           </p>
                         </div>
                       </div>
@@ -440,7 +440,7 @@ export default function SettingsPage() {
                     <div className="text-xs text-cyan-400 mb-2">✅ Active Tab: NOTIFICATIONS</div>
                     <section className="space-y-4">
                       <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Bell className="w-4 h-4" /> Alert Protocols
+                        <Bell className="w-4 h-4" /> {t('settings.alertProtocols')}
                       </h3>
                       <div className="space-y-3">
                         <label className="flex items-center justify-between p-4 rounded-xl bg-background/30 border border-cyan-500/5 cursor-pointer hover:bg-card/40 transition-all group">
@@ -449,8 +449,8 @@ export default function SettingsPage() {
                               <Bell className="w-4 h-4 text-cyan-400" />
                             </div>
                             <div>
-                              <p className="text-sm font-bold">Neural Node Updates (Email)</p>
-                              <p className="text-xs text-muted-foreground">Receive task updates via email transmission</p>
+                              <p className="text-sm font-bold">{t('settings.emailNotifications')}</p>
+                              <p className="text-xs text-muted-foreground">{t('settings.emailNotificationsDesc')}</p>
                             </div>
                           </div>
                           <input
@@ -467,8 +467,8 @@ export default function SettingsPage() {
                               <Bell className="w-4 h-4 text-fuchsia-400" />
                             </div>
                             <div>
-                              <p className="text-sm font-bold">Direct Stream Alerts (Push)</p>
-                              <p className="text-xs text-muted-foreground">Real-time push notifications to your device</p>
+                              <p className="text-sm font-bold">{t('settings.pushNotifications')}</p>
+                              <p className="text-xs text-muted-foreground">{t('settings.pushNotificationsDesc')}</p>
                             </div>
                           </div>
                           <input
@@ -481,7 +481,7 @@ export default function SettingsPage() {
 
                         <div className="p-4 rounded-xl bg-background/30 border border-cyan-500/10 mt-4">
                           <p className="text-xs text-muted-foreground">
-                            <span className="font-bold text-fuchsia-400">Privacy Notice:</span> Notification preferences are securely encrypted and stored in your neural profile.
+                            {t('settings.privacyNotice')}
                           </p>
                         </div>
                       </div>
@@ -495,7 +495,7 @@ export default function SettingsPage() {
                     <div className="text-xs text-cyan-400 mb-2">✅ Active Tab: SECURITY</div>
                     <section className="space-y-4">
                       <h3 className="text-sm font-bold text-cyan-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                        <Shield className="w-4 h-4" /> Security Protocols
+                        <Shield className="w-4 h-4" /> {t('settings.securityProtocols')}
                       </h3>
 
                       <div className="space-y-3">
@@ -507,8 +507,8 @@ export default function SettingsPage() {
                                 <Lock className="w-4 h-4 text-cyan-400" />
                               </div>
                               <div>
-                                <p className="text-sm font-bold">Change Password</p>
-                                <p className="text-xs text-muted-foreground">Update your authentication credentials</p>
+                                <p className="text-sm font-bold">{t('settings.changePassword')}</p>
+                                <p className="text-xs text-muted-foreground">{t('settings.changePasswordDesc')}</p>
                               </div>
                             </div>
                             <button
@@ -528,8 +528,8 @@ export default function SettingsPage() {
                                 <Key className="w-4 h-4 text-fuchsia-400" />
                               </div>
                               <div>
-                                <p className="text-sm font-bold">Two-Factor Authentication</p>
-                                <p className="text-xs text-muted-foreground">Add an extra layer of security</p>
+                                <p className="text-sm font-bold">{t('settings.twoFactor')}</p>
+                                <p className="text-xs text-muted-foreground">{t('settings.twoFactorDesc')}</p>
                               </div>
                             </div>
                             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
@@ -537,7 +537,7 @@ export default function SettingsPage() {
                                 ? 'bg-green-500/10 border border-green-500/30 text-green-400'
                                 : 'bg-red-500/10 border border-red-500/30 text-red-400'
                             }`}>
-                              {twoFactorEnabled ? 'Enabled' : 'Disabled'}
+                              {twoFactorEnabled ? t('common.enabled') : t('common.disabled')}
                             </span>
                           </div>
                         </div>
@@ -550,8 +550,8 @@ export default function SettingsPage() {
                                 <Eye className="w-4 h-4 text-cyan-400" />
                               </div>
                               <div>
-                                <p className="text-sm font-bold">Active Sessions</p>
-                                <p className="text-xs text-muted-foreground">View and manage logged-in devices</p>
+                                <p className="text-sm font-bold">{t('settings.activeSessions')}</p>
+                                <p className="text-xs text-muted-foreground">{t('settings.activeSessionsDesc')}</p>
                               </div>
                             </div>
                             <button
@@ -565,7 +565,7 @@ export default function SettingsPage() {
 
                         <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/30 mt-4">
                           <p className="text-xs text-green-400">
-                            <span className="font-bold">Security Status:</span> Password change and session management are active. 2FA coming soon.
+                            {t('settings.securityStatus')}
                           </p>
                         </div>
                       </div>
@@ -578,37 +578,37 @@ export default function SettingsPage() {
                   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-background border border-cyan-500/30 rounded-xl p-6 w-full max-w-md mx-4 shadow-[0_0_30px_rgba(0,217,255,0.2)]">
                       <h3 className="text-lg font-bold text-cyan-400 mb-4 flex items-center gap-2">
-                        <Lock className="w-5 h-5" /> Change Password
+                        <Lock className="w-5 h-5" /> {t('settings.changePassword')}
                       </h3>
                       <div className="space-y-4">
                         <div>
-                          <label className="text-xs text-muted-foreground uppercase tracking-wider">Current Password</label>
+                          <label className="text-xs text-muted-foreground uppercase tracking-wider">{t('settings.currentPassword')}</label>
                           <input
                             type="password"
                             value={currentPassword}
                             onChange={(e) => setCurrentPassword(e.target.value)}
                             className="w-full mt-1 px-4 py-2 rounded-lg bg-background/50 border border-cyan-500/20 text-sm focus:border-cyan-500/50 focus:outline-none"
-                            placeholder="Enter current password"
+                            placeholder={t('settings.currentPasswordPlaceholder')}
                           />
                         </div>
                         <div>
-                          <label className="text-xs text-muted-foreground uppercase tracking-wider">New Password</label>
+                          <label className="text-xs text-muted-foreground uppercase tracking-wider">{t('settings.newPassword')}</label>
                           <input
                             type="password"
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
                             className="w-full mt-1 px-4 py-2 rounded-lg bg-background/50 border border-cyan-500/20 text-sm focus:border-cyan-500/50 focus:outline-none"
-                            placeholder="Enter new password (min 8 chars)"
+                            placeholder={t('settings.newPasswordPlaceholder')}
                           />
                         </div>
                         <div>
-                          <label className="text-xs text-muted-foreground uppercase tracking-wider">Confirm New Password</label>
+                          <label className="text-xs text-muted-foreground uppercase tracking-wider">{t('settings.confirmNewPassword')}</label>
                           <input
                             type="password"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             className="w-full mt-1 px-4 py-2 rounded-lg bg-background/50 border border-cyan-500/20 text-sm focus:border-cyan-500/50 focus:outline-none"
-                            placeholder="Confirm new password"
+                            placeholder={t('settings.confirmNewPasswordPlaceholder')}
                           />
                         </div>
                         <div className="flex gap-3 mt-6">
@@ -629,7 +629,7 @@ export default function SettingsPage() {
                             className="flex-1 px-4 py-2 rounded-lg bg-cyan-500 text-black text-sm font-bold hover:bg-cyan-400 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                           >
                             {passwordChanging && <Loader2 className="w-4 h-4 animate-spin" />}
-                            {passwordChanging ? 'Changing...' : 'Change Password'}
+                            {passwordChanging ? t('settings.changingPassword') : t('settings.changePassword')}
                           </button>
                         </div>
                       </div>
@@ -642,7 +642,7 @@ export default function SettingsPage() {
                   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-background border border-cyan-500/30 rounded-xl p-6 w-full max-w-md mx-4 shadow-[0_0_30px_rgba(0,217,255,0.2)]">
                       <h3 className="text-lg font-bold text-cyan-400 mb-4 flex items-center gap-2">
-                        <Eye className="w-5 h-5" /> Active Sessions
+                        <Eye className="w-5 h-5" /> {t('settings.activeSessions')}
                       </h3>
                       {sessionsLoading ? (
                         <div className="flex justify-center py-8">
@@ -663,14 +663,14 @@ export default function SettingsPage() {
                                 </div>
                                 {session.is_current && (
                                   <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-bold">
-                                    Current
+                                    {t('settings.current')}
                                   </span>
                                 )}
                               </div>
                             </div>
                           ))}
                           {sessions.length === 0 && (
-                            <p className="text-center text-muted-foreground py-4">No active sessions found</p>
+                            <p className="text-center text-muted-foreground py-4">{t('settings.noActiveSessions')}</p>
                           )}
                         </div>
                       )}
@@ -685,7 +685,7 @@ export default function SettingsPage() {
                           onClick={handleLogoutAll}
                           className="flex-1 px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-bold hover:bg-red-500/30 transition-all"
                         >
-                          Logout All Others
+                          {t('settings.logoutAllOthers')}
                         </button>
                       </div>
                     </div>
@@ -704,7 +704,7 @@ export default function SettingsPage() {
                     ) : (
                       <Save className="w-5 h-5" />
                     )}
-                    <span>Sync Configurations</span>
+                    <span>{t('settings.syncConfigurations')}</span>
                   </button>
                 </div>
               </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { api, Task, TasksResponse } from '../lib/api';
+import { useTranslation } from '../lib/i18n';
 import TaskItem from './TaskItem';
 
 interface TaskListProps {
@@ -16,6 +17,7 @@ type SortField = 'created_at' | 'due_date' | 'priority' | 'title';
 type SortOrder = 'asc' | 'desc';
 
 export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
+  const { t } = useTranslation();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [counts, setCounts] = useState({ total: 0, pending: 0, completed: 0 });
   const [loading, setLoading] = useState(true);
@@ -136,31 +138,31 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
   };
 
   const filterButtons: { status: FilterStatus; label: string; color: string }[] = [
-    { status: 'all', label: 'All', color: 'cyan' },
-    { status: 'pending', label: 'Active', color: 'fuchsia' },
-    { status: 'completed', label: 'Done', color: 'green' },
+    { status: 'all', label: t('tasks.filterAll'), color: 'cyan' },
+    { status: 'pending', label: t('tasks.filterActive'), color: 'fuchsia' },
+    { status: 'completed', label: t('tasks.filterDone'), color: 'green' },
   ];
 
   const priorityOptions: { value: FilterPriority; label: string }[] = [
-    { value: 'all', label: 'All Priorities' },
-    { value: 'high', label: '🔴 High' },
-    { value: 'medium', label: '🟡 Medium' },
-    { value: 'low', label: '🟢 Low' },
-    { value: 'none', label: '⚪ None' },
+    { value: 'all', label: t('tasks.allPriorities') },
+    { value: 'high', label: `🔴 ${t('tasks.priorityHigh')}` },
+    { value: 'medium', label: `🟡 ${t('tasks.priorityMedium')}` },
+    { value: 'low', label: `🟢 ${t('tasks.priorityLow')}` },
+    { value: 'none', label: `⚪ ${t('tasks.priorityNone')}` },
   ];
 
   const dueOptions: { value: FilterDue; label: string }[] = [
-    { value: 'all', label: 'All Dates' },
-    { value: 'today', label: '📅 Today' },
-    { value: 'overdue', label: '⚠️ Overdue' },
-    { value: 'week', label: '📆 This Week' },
+    { value: 'all', label: t('tasks.allDates') },
+    { value: 'today', label: `📅 ${t('tasks.today')}` },
+    { value: 'overdue', label: `⚠️ ${t('tasks.overdue')}` },
+    { value: 'week', label: `📆 ${t('tasks.thisWeek')}` },
   ];
 
   const sortOptions: { value: SortField; label: string }[] = [
-    { value: 'created_at', label: 'Created' },
-    { value: 'due_date', label: 'Due Date' },
-    { value: 'priority', label: 'Priority' },
-    { value: 'title', label: 'Title' },
+    { value: 'created_at', label: t('tasks.sortCreated') },
+    { value: 'due_date', label: t('tasks.sortDueDate') },
+    { value: 'priority', label: t('tasks.sortPriority') },
+    { value: 'title', label: t('tasks.sortTitle') },
   ];
 
   return (
@@ -179,7 +181,7 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
             setSearchQuery(e.target.value);
             setIsSearching(true);
           }}
-          placeholder="Search neural task stream..."
+          placeholder={t('tasks.searchTasks')}
           className="block w-full pl-12 pr-4 py-3 rounded-2xl bg-card/60 backdrop-blur-xl border-2 border-cyan-500/20 text-foreground placeholder-muted-foreground focus:border-cyan-500/50 focus:shadow-[0_0_20px_rgba(0,217,255,0.2)] focus:outline-none transition-all"
         />
         {isSearching && (
@@ -194,13 +196,13 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
         <div className="flex flex-col gap-4">
           <div className="flex gap-4 sm:gap-6 text-xs sm:text-sm justify-center sm:justify-start">
             <span className="text-muted-foreground">
-              Total: <span className="text-cyan-400 font-bold">{counts.total}</span>
+              {t('tasks.total')} <span className="text-cyan-400 font-bold">{counts.total}</span>
             </span>
             <span className="text-muted-foreground">
-              Active: <span className="text-fuchsia-400 font-bold">{counts.pending}</span>
+              {t('tasks.active')} <span className="text-fuchsia-400 font-bold">{counts.pending}</span>
             </span>
             <span className="text-muted-foreground">
-              Done: <span className="text-green-400 font-bold">{counts.completed}</span>
+              {t('tasks.done')} <span className="text-green-400 font-bold">{counts.completed}</span>
             </span>
           </div>
 
@@ -253,7 +255,7 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
                   : 'bg-background/50 border border-cyan-500/20 text-muted-foreground hover:text-cyan-400'
               }`}
             >
-              {selectedTaskIds.length === tasks.length && tasks.length > 0 ? 'Deselect' : 'Select All'}
+              {selectedTaskIds.length === tasks.length && tasks.length > 0 ? t('tasks.deselect') : t('tasks.selectAll')}
             </button>
 
             {/* US2: Advanced Filters Toggle */}
@@ -265,7 +267,7 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
                   : 'bg-background/50 border border-cyan-500/20 text-muted-foreground hover:text-cyan-400 hover:border-cyan-400'
               }`}
             >
-              Filters
+              {t('tasks.filters')}
             </button>
 
             {/* US2: Sort Order Toggle */}
@@ -285,7 +287,7 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
             {/* Priority Filter */}
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
-                Priority
+                {t('tasks.priority')}
               </label>
               <select
                 value={priorityFilter}
@@ -303,7 +305,7 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
             {/* Due Date Filter */}
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
-                Due Date
+                {t('tasks.dueDate')}
               </label>
               <select
                 value={dueFilter}
@@ -321,7 +323,7 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
             {/* Sort By */}
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
-                Sort By
+                {t('tasks.sortBy')}
               </label>
               <select
                 value={sortField}
@@ -350,7 +352,7 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
             onClick={fetchTasks}
             className="ml-auto text-red-300 hover:text-red-200 underline"
           >
-            Retry
+            {t('common.retry')}
           </button>
         </div>
       )}
@@ -367,7 +369,7 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
               </svg>
             </div>
           </div>
-          <p className="text-cyan-400 uppercase tracking-wider text-sm">Loading tasks...</p>
+          <p className="text-cyan-400 uppercase tracking-wider text-sm">{t('tasks.loadingTasks')}</p>
         </div>
       )}
 
@@ -391,17 +393,17 @@ export default function TaskList({ userId, refreshTrigger }: TaskListProps) {
           </div>
           <h3 className="text-xl font-bold mb-2 text-foreground">
             {statusFilter === 'completed'
-              ? 'No completed missions'
+              ? t('tasks.noCompletedMissions')
               : statusFilter === 'pending'
-              ? 'All missions complete!'
-              : 'No active missions'}
+              ? t('tasks.allMissionsComplete')
+              : t('tasks.noActiveMissions')}
           </h3>
           <p className="text-muted-foreground">
             {statusFilter === 'all'
-              ? 'Initialize your first task above'
+              ? t('tasks.initFirstTask')
               : statusFilter === 'pending'
-              ? 'Outstanding work, agent!'
-              : 'Complete some tasks to see them here'}
+              ? t('tasks.outstandingWork')
+              : t('tasks.completeSomeToSee')}
           </p>
         </div>
       )}
