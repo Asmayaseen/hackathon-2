@@ -16,6 +16,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Send, Mic, MicOff, Loader2, MessageCircle, Trash2 } from 'lucide-react';
 import axios from 'axios';
+import { useTranslation } from '@/lib/i18n';
 
 interface Message {
   id: number;
@@ -33,6 +34,7 @@ interface Conversation {
 
 export default function ChatPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -325,7 +327,7 @@ export default function ChatPage() {
           </svg>
         </button>
         <h1 className="text-lg font-bold bg-gradient-to-r from-[#00d9ff] to-[#d946ef] bg-clip-text text-transparent">
-          🤖 AI Assistant
+          🤖 {t('chat.aiAssistant')}
         </h1>
         <div className="w-10" />
       </div>
@@ -346,13 +348,13 @@ export default function ChatPage() {
             className="w-full px-4 py-2 bg-gradient-to-r from-[#00d9ff] to-[#d946ef] text-white rounded-lg hover:shadow-[0_0_20px_rgba(0,217,255,0.4)] transition-all flex items-center justify-center gap-2 text-sm"
           >
             <MessageCircle size={18} />
-            New Chat
+            {t('chat.newChat')}
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-2">
           <h3 className="px-2 text-xs sm:text-sm font-semibold text-slate-400 mb-2">
-            Conversations
+            {t('chat.conversations')}
           </h3>
           {conversations.map(conv => (
             <button
@@ -370,7 +372,7 @@ export default function ChatPage() {
               }`}
             >
               <div className="font-medium truncate">
-                Conversation #{conv.id}
+                {t('chat.conversationNumber')} {conv.id}
               </div>
               <div className="text-xs text-slate-400">
                 {new Date(conv.updated_at).toLocaleDateString()}
@@ -384,7 +386,7 @@ export default function ChatPage() {
             onClick={() => router.push('/dashboard')}
             className="w-full px-3 sm:px-4 py-2 text-xs sm:text-sm text-slate-200 hover:bg-slate-700/50 rounded-lg transition-all flex items-center justify-center gap-2"
           >
-            ← Back to Dashboard
+            ← {t('chat.backToDashboard')}
           </button>
         </div>
       </div>
@@ -394,10 +396,10 @@ export default function ChatPage() {
         {/* Header */}
         <div className="hidden lg:block bg-[rgba(15,23,42,0.8)] backdrop-blur-xl border-b border-[rgba(0,217,255,0.2)] p-3 sm:p-4">
           <h1 className="text-lg sm:text-xl md:text-2xl font-bold bg-gradient-to-r from-[#00d9ff] to-[#d946ef] bg-clip-text text-transparent">
-            🤖 Evolution Todo AI Assistant
+            🤖 {t('chat.evolutionTodoAI')}
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Manage your tasks using natural language in English or Urdu (اردو)
+            {t('chat.manageFullPage')}
           </p>
         </div>
 
@@ -406,9 +408,9 @@ export default function ChatPage() {
           {messages.length === 0 && (
             <div className="text-center text-slate-400 mt-10 sm:mt-20">
               <MessageCircle size={36} className="mx-auto mb-3 sm:mb-4 opacity-50 text-[#00d9ff] animate-pulse" />
-              <p className="text-base sm:text-lg font-medium text-slate-200">Start a conversation</p>
+              <p className="text-base sm:text-lg font-medium text-slate-200">{t('chat.startConversation')}</p>
               <p className="text-xs sm:text-sm mt-2 px-4">
-                Try: "Add a task to buy groceries tomorrow" or "اپنی فہرست دکھائیں"
+                {t('chat.tryHint')}
               </p>
             </div>
           )}
@@ -467,7 +469,7 @@ export default function ChatPage() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-              placeholder="Type your message..."
+              placeholder={t('chat.typeMessage')}
               disabled={isLoading}
               className="flex-1 px-3 sm:px-4 py-2 text-sm sm:text-base border border-[rgba(0,217,255,0.2)] rounded-lg bg-[rgba(15,23,42,0.6)] text-slate-200 placeholder-slate-400 focus:outline-none focus:border-[#00d9ff] focus:shadow-[0_0_15px_rgba(0,217,255,0.3)] transition-all disabled:opacity-50"
             />

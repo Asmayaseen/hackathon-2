@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { api, HistoryEntry } from '@/lib/api';
+import { useTranslation } from '@/lib/i18n';
 import { History, Search, Filter, Loader2, ArrowLeftRight, Edit3, Trash2, CheckCircle2, PlusCircle, Activity } from 'lucide-react';
 
 export default function HistoryPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -78,9 +80,9 @@ export default function HistoryPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold uppercase tracking-wider bg-gradient-to-r from-fuchsia-400 to-cyan-500 bg-clip-text text-transparent">
-                  Neural Logs
+                  {t('history.neuralLogs')}
                 </h1>
-                <p className="text-muted-foreground uppercase text-xs tracking-[0.2em]">Immutable action history</p>
+                <p className="text-muted-foreground uppercase text-xs tracking-[0.2em]">{t('history.immutableHistory')}</p>
               </div>
             </div>
 
@@ -88,7 +90,7 @@ export default function HistoryPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search Action Logs..."
+                placeholder={t('history.searchActionLogs')}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 className="pl-10 pr-4 py-2 bg-card border border-cyan-500/20 rounded-xl focus:outline-none focus:border-cyan-500 transition-all font-medium text-sm"
@@ -99,8 +101,8 @@ export default function HistoryPage() {
           {/* Audit Log Table */}
           <div className="bg-card/50 backdrop-blur-xl border border-cyan-500/10 rounded-2xl overflow-hidden">
              <div className="p-4 border-b border-cyan-500/10 bg-cyan-500/5 flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-400">Transaction Stream</span>
-                <span className="text-[10px] text-muted-foreground font-bold uppercase">{filteredHistory.length} entries detected</span>
+                <span className="text-xs font-bold uppercase tracking-[0.3em] text-cyan-400">{t('history.transactionStream')}</span>
+                <span className="text-[10px] text-muted-foreground font-bold uppercase">{filteredHistory.length} {t('history.entriesDetected')}</span>
              </div>
 
              <div className="divide-y divide-cyan-500/5">
@@ -142,7 +144,7 @@ export default function HistoryPage() {
                 ) : (
                   <div className="py-20 text-center">
                     <Activity className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-                    <p className="text-muted-foreground uppercase tracking-widest text-sm">No neural logs found in specified range</p>
+                    <p className="text-muted-foreground uppercase tracking-widest text-sm">{t('history.noLogsFound')}</p>
                   </div>
                 )}
              </div>
@@ -152,7 +154,7 @@ export default function HistoryPage() {
              <div className="w-1 h-1 bg-cyan-500 rounded-full" />
              <div className="w-1 h-1 bg-cyan-500 rounded-full" />
              <div className="w-1 h-1 bg-cyan-500 rounded-full" />
-             <span className="text-[10px] uppercase tracking-[0.5em] font-bold">End of Log Stream</span>
+             <span className="text-[10px] uppercase tracking-[0.5em] font-bold">{t('history.endOfLogStream')}</span>
           </div>
         </div>
       </main>

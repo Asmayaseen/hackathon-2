@@ -3,8 +3,10 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import axios from 'axios';
+import { useTranslation } from '@/lib/i18n';
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
@@ -41,7 +43,7 @@ export default function LoginPage() {
       // Redirect to chat
       router.push('/chat');
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Authentication failed');
+      setError(err.response?.data?.detail || t('auth.authFailed'));
       setLoading(false);
     }
   };
@@ -56,11 +58,11 @@ export default function LoginPage() {
 
       <div className="relative z-10 bg-[rgba(15,23,42,0.8)] backdrop-blur-xl border border-[rgba(0,217,255,0.2)] rounded-lg p-8 shadow-[0_0_30px_rgba(0,217,255,0.2)] max-w-md w-full mx-4">
         <h1 className="text-3xl font-bold bg-gradient-to-r from-[#00d9ff] to-[#d946ef] bg-clip-text text-transparent mb-2 text-center">
-          🤖 Evolution Todo
+          {t('login.evolutionTodo')}
         </h1>
 
         <p className="text-slate-400 text-center mb-6 text-sm">
-          Phase III AI-Powered Task Management
+          {t('login.phaseIII')}
         </p>
 
         <div className="flex gap-2 mb-6">
@@ -72,7 +74,7 @@ export default function LoginPage() {
                 : 'bg-slate-700 text-slate-300'
             }`}
           >
-            Sign In
+            {t('common.signIn')}
           </button>
           <button
             onClick={() => setIsSignup(true)}
@@ -82,7 +84,7 @@ export default function LoginPage() {
                 : 'bg-slate-700 text-slate-300'
             }`}
           >
-            Sign Up
+            {t('common.signUp')}
           </button>
         </div>
 
@@ -90,7 +92,7 @@ export default function LoginPage() {
           {isSignup && (
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">
-                Name
+                {t('login.name')}
               </label>
               <input
                 type="text"
@@ -98,14 +100,14 @@ export default function LoginPage() {
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 required={isSignup}
                 className="w-full px-4 py-2 bg-[rgba(15,23,42,0.6)] border border-[rgba(0,217,255,0.2)] rounded-lg text-slate-200 focus:outline-none focus:border-[#00d9ff] focus:shadow-[0_0_15px_rgba(0,217,255,0.3)] transition-all"
-                placeholder="Your name"
+                placeholder={t('login.yourName')}
               />
             </div>
           )}
 
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1">
-              Email
+              {t('login.email')}
             </label>
             <input
               type="email"
@@ -113,13 +115,13 @@ export default function LoginPage() {
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
               className="w-full px-4 py-2 bg-[rgba(15,23,42,0.6)] border border-[rgba(0,217,255,0.2)] rounded-lg text-slate-200 focus:outline-none focus:border-[#00d9ff] focus:shadow-[0_0_15px_rgba(0,217,255,0.3)] transition-all"
-              placeholder="your@email.com"
+              placeholder={t('login.yourEmail')}
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-300 mb-1">
-              Password
+              {t('login.password')}
             </label>
             <input
               type="password"
@@ -131,7 +133,7 @@ export default function LoginPage() {
               placeholder="••••••••"
             />
             {isSignup && (
-              <p className="text-xs text-slate-500 mt-1">Minimum 8 characters</p>
+              <p className="text-xs text-slate-500 mt-1">{t('login.minChars')}</p>
             )}
           </div>
 
@@ -146,17 +148,17 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full px-6 py-3 bg-gradient-to-r from-[#00d9ff] to-[#d946ef] text-white rounded-lg hover:shadow-[0_0_20px_rgba(0,217,255,0.4)] transition-all disabled:opacity-50 font-semibold"
           >
-            {loading ? 'Please wait...' : (isSignup ? 'Create Account' : 'Sign In')}
+            {loading ? t('common.pleaseWait') : (isSignup ? t('common.createAccount') : t('common.signIn'))}
           </button>
         </form>
 
         <p className="text-xs text-slate-500 text-center mt-4">
-          {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
+          {isSignup ? t('common.alreadyHaveAccount') : t('common.dontHaveAccount')}{' '}
           <button
             onClick={() => setIsSignup(!isSignup)}
             className="text-[#00d9ff] hover:underline"
           >
-            {isSignup ? 'Sign in' : 'Sign up'}
+            {isSignup ? t('common.signIn') : t('common.signUp')}
           </button>
         </p>
       </div>

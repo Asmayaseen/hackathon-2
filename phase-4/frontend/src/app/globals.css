@@ -229,3 +229,51 @@ body {
 .dark .input-cyber:focus {
   box-shadow: 0 0 15px rgba(0, 217, 255, 0.3);
 }
+
+/* ============================================================
+   RTL (Right-to-Left) Support for Urdu
+   ============================================================ */
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="rtl"] .space-x-1 > :not([hidden]) ~ :not([hidden]),
+[dir="rtl"] .space-x-2 > :not([hidden]) ~ :not([hidden]),
+[dir="rtl"] .space-x-3 > :not([hidden]) ~ :not([hidden]),
+[dir="rtl"] .space-x-4 > :not([hidden]) ~ :not([hidden]),
+[dir="rtl"] .space-x-6 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-x-reverse: 1;
+}
+
+[dir="rtl"] .gap-2,
+[dir="rtl"] .gap-3,
+[dir="rtl"] .gap-4,
+[dir="rtl"] .gap-6 {
+  /* gaps work fine with RTL */
+}
+
+/* Flip directional padding/margins for RTL */
+[dir="rtl"] input,
+[dir="rtl"] textarea,
+[dir="rtl"] select {
+  text-align: right;
+}
+
+/* Urdu font support */
+[lang="ur"] {
+  font-family: 'Noto Nastaliq Urdu', 'Jameel Noori Nastaleeq', 'Nastaliq', var(--font-sans), system-ui, sans-serif;
+  line-height: 2;
+}
+
+[lang="ur"] h1, [lang="ur"] h2, [lang="ur"] h3 {
+  line-height: 1.6;
+}
+
+/* Fix icon + text order in RTL */
+[dir="rtl"] .flex-row-reverse {
+  flex-direction: row;
+}
+
+[dir="rtl"] .flex:not(.flex-col):not(.flex-col-reverse) {
+  /* Keep flex working normally; gap handles spacing */
+}

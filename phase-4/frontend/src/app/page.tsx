@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import ThemeToggle from '@/components/ThemeToggle';
+import { useTranslation } from '@/lib/i18n';
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export default function HomePage() {
               </div>
             </div>
             <span className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-fuchsia-400 bg-clip-text text-transparent tracking-wider">
-              NEURAL TASKS
+              {t('auth.neuralTasks')}
             </span>
           </div>
           <div className="flex items-center gap-6">
@@ -48,7 +50,7 @@ export default function HomePage() {
               >
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-fuchsia-500 rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-300" />
                 <div className="relative px-6 py-3 bg-gradient-to-r from-cyan-500 to-fuchsia-500 rounded-xl text-white font-bold uppercase text-sm tracking-wider border border-cyan-400/30 shadow-[0_0_30px_rgba(0,217,255,0.4)]">
-                  Dashboard
+                  {t('landing.dashboard')}
                 </div>
               </Link>
             ) : (
@@ -57,7 +59,7 @@ export default function HomePage() {
                   href="/auth/signin"
                   className="text-cyan-400 hover:text-cyan-300 font-medium transition-colors tracking-wide uppercase text-sm"
                 >
-                  Sign In
+                  {t('common.signIn')}
                 </Link>
                 <Link
                   href="/auth/signup"
@@ -65,7 +67,7 @@ export default function HomePage() {
                 >
                   <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500 to-fuchsia-500 rounded-xl blur opacity-75 group-hover:opacity-100 transition duration-300" />
                   <div className="relative px-6 py-3 bg-gradient-to-r from-cyan-500 to-fuchsia-500 rounded-xl text-white font-bold uppercase text-sm tracking-wider border border-cyan-400/30 shadow-[0_0_30px_rgba(0,217,255,0.4)]">
-                    Initialize
+                    {t('landing.initialize')}
                   </div>
                 </Link>
               </>
@@ -79,21 +81,20 @@ export default function HomePage() {
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <div className="inline-block">
             <div className="px-6 py-2 bg-slate-900/80 dark:bg-black border-2 border-cyan-500/50 rounded-full text-sm font-bold text-cyan-400 backdrop-blur-sm shadow-[0_0_20px_rgba(0,217,255,0.3)] uppercase tracking-wider">
-              Neural Task Management System
+              {t('landing.neuralTaskSystem')}
             </div>
           </div>
 
           <h1 className="text-6xl md:text-7xl font-extrabold leading-tight">
-            <span className="text-foreground">Join The</span>
+            <span className="text-foreground">{t('landing.joinThe')}</span>
             <br />
             <span className="bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">
-              Neural Network
+              {t('landing.neuralNetwork')}
             </span>
           </h1>
 
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Initialize your neural task management account. Harness AI-powered organization
-            with cybernetic precision and real-time synchronization.
+            {t('landing.heroDescription')}
           </p>
 
           <div className="flex gap-4 justify-center mt-8 flex-wrap">
@@ -106,7 +107,7 @@ export default function HomePage() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                Initialize Account
+                {t('landing.initializeAccount')}
               </div>
             </Link>
             {isAuthenticated && (
@@ -119,7 +120,7 @@ export default function HomePage() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                   </svg>
-                  AI Assistant
+                  {t('landing.aiAssistant')}
                 </div>
               </Link>
             )}
@@ -127,7 +128,7 @@ export default function HomePage() {
               href="#features"
               className="px-10 py-4 bg-slate-900/80 dark:bg-black border-2 border-cyan-500/50 text-cyan-400 rounded-2xl font-bold text-lg hover:border-cyan-400 hover:shadow-[0_0_30px_rgba(0,217,255,0.3)] backdrop-blur-sm transition-all duration-300 uppercase tracking-wider"
             >
-              System Features
+              {t('landing.systemFeatures')}
             </a>
           </div>
 
@@ -136,19 +137,19 @@ export default function HomePage() {
               <svg className="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              <span>No credit card required</span>
+              <span>{t('landing.noCreditCard')}</span>
             </div>
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              <span>Free forever plan</span>
+              <span>{t('landing.freeForever')}</span>
             </div>
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
               </svg>
-              <span>Unlimited tasks</span>
+              <span>{t('landing.unlimitedTasks')}</span>
             </div>
           </div>
         </div>
@@ -158,11 +159,11 @@ export default function HomePage() {
       <section id="features" className="container mx-auto px-6 py-20 relative z-10">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
-            <span className="text-foreground">Neural System</span>{' '}
-            <span className="bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">Features</span>
+            <span className="text-foreground">{t('landing.neuralSystemFeatures')}</span>{' '}
+            <span className="bg-gradient-to-r from-cyan-400 to-fuchsia-500 bg-clip-text text-transparent">{t('landing.features')}</span>
           </h2>
           <p className="text-xl text-muted-foreground">
-            Advanced cybernetic task management protocols
+            {t('landing.advancedProtocols')}
           </p>
         </div>
 
@@ -176,9 +177,9 @@ export default function HomePage() {
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-2xl font-bold bg-gradient-to-r from-fuchsia-400 to-purple-400 bg-clip-text text-transparent mb-3 uppercase tracking-wide">AI-Powered Assistant</h3>
+                <h3 className="text-2xl font-bold bg-gradient-to-r from-fuchsia-400 to-purple-400 bg-clip-text text-transparent mb-3 uppercase tracking-wide">{t('landing.aiPoweredAssistant')}</h3>
                 <p className="text-muted-foreground leading-relaxed mb-4">
-                  Chat with your intelligent AI assistant in natural language. Manage tasks, get summaries, and productivity insights using English or Urdu. Powered by GPT-4 with voice input support via Whisper STT.
+                  {t('landing.aiPoweredAssistantDesc')}
                 </p>
                 {isAuthenticated && (
                   <Link
@@ -188,7 +189,7 @@ export default function HomePage() {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
-                    Try AI Assistant Now
+                    {t('landing.tryAiNow')}
                   </Link>
                 )}
               </div>
@@ -203,9 +204,9 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-cyan-400 mb-3 uppercase tracking-wide">Neural Security</h3>
+              <h3 className="text-xl font-bold text-cyan-400 mb-3 uppercase tracking-wide">{t('landing.neuralSecurity')}</h3>
               <p className="text-muted-foreground leading-relaxed text-sm">
-                Enterprise-grade encryption with JWT authentication protocols. Maximum security for your data stream.
+                {t('landing.neuralSecurityDesc')}
               </p>
             </div>
           </div>
@@ -218,9 +219,9 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-fuchsia-400 mb-3 uppercase tracking-wide">Smart Organization</h3>
+              <h3 className="text-xl font-bold text-fuchsia-400 mb-3 uppercase tracking-wide">{t('landing.smartOrganization')}</h3>
               <p className="text-muted-foreground leading-relaxed text-sm">
-                Intelligent task categorization. Advanced filtering algorithms with real-time search capabilities.
+                {t('landing.smartOrganizationDesc')}
               </p>
             </div>
           </div>
@@ -233,9 +234,9 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-cyan-400 mb-3 uppercase tracking-wide">Lightning Speed</h3>
+              <h3 className="text-xl font-bold text-cyan-400 mb-3 uppercase tracking-wide">{t('landing.lightningSpeed')}</h3>
               <p className="text-muted-foreground leading-relaxed text-sm">
-                Built with Next.js and FastAPI. Real-time synchronization across all connected devices with zero latency.
+                {t('landing.lightningSpeedDesc')}
               </p>
             </div>
           </div>
@@ -248,9 +249,9 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-fuchsia-400 mb-3 uppercase tracking-wide">Progress Tracking</h3>
+              <h3 className="text-xl font-bold text-fuchsia-400 mb-3 uppercase tracking-wide">{t('landing.progressTracking')}</h3>
               <p className="text-muted-foreground leading-relaxed text-sm">
-                Visual productivity insights. Track trends and optimize your workflow efficiency with real-time counters.
+                {t('landing.progressTrackingDesc')}
               </p>
             </div>
           </div>
@@ -263,9 +264,9 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-cyan-400 mb-3 uppercase tracking-wide">Cloud Storage</h3>
+              <h3 className="text-xl font-bold text-cyan-400 mb-3 uppercase tracking-wide">{t('landing.cloudStorage')}</h3>
               <p className="text-muted-foreground leading-relaxed text-sm">
-                Secure cloud storage with Neon PostgreSQL. Your data is safely backed up and always accessible.
+                {t('landing.cloudStorageDesc')}
               </p>
             </div>
           </div>
@@ -278,9 +279,9 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-fuchsia-400 mb-3 uppercase tracking-wide">Real-time Updates</h3>
+              <h3 className="text-xl font-bold text-fuchsia-400 mb-3 uppercase tracking-wide">{t('landing.realTimeUpdates')}</h3>
               <p className="text-muted-foreground leading-relaxed text-sm">
-                Instant synchronization. See changes reflected immediately without refreshing the page.
+                {t('landing.realTimeUpdatesDesc')}
               </p>
             </div>
           </div>
@@ -295,10 +296,10 @@ export default function HomePage() {
           <div className="relative">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-                Get Started in 3 Simple Steps
+                {t('landing.getStarted')}
               </h2>
               <p className="text-xl text-muted-foreground">
-                Start managing your tasks in less than a minute
+                {t('landing.startManaging')}
               </p>
             </div>
 
@@ -307,9 +308,9 @@ export default function HomePage() {
                 <div className="w-20 h-20 bg-gradient-to-br from-cyan-500 via-fuchsia-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-cyan-500/50">
                   <span className="text-3xl font-bold text-white">1</span>
                 </div>
-                <h3 className="text-2xl font-bold text-cyan-400 mb-4">Create Account</h3>
+                <h3 className="text-2xl font-bold text-cyan-400 mb-4">{t('landing.step1Title')}</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Sign up with your email in seconds. No credit card required, no commitments.
+                  {t('landing.step1Desc')}
                 </p>
               </div>
 
@@ -317,9 +318,9 @@ export default function HomePage() {
                 <div className="w-20 h-20 bg-gradient-to-br from-fuchsia-500 via-purple-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-fuchsia-500/50">
                   <span className="text-3xl font-bold text-white">2</span>
                 </div>
-                <h3 className="text-2xl font-bold text-fuchsia-400 mb-4">Add Your Tasks</h3>
+                <h3 className="text-2xl font-bold text-fuchsia-400 mb-4">{t('landing.step2Title')}</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Create tasks, set priorities, add due dates, and organize with tags.
+                  {t('landing.step2Desc')}
                 </p>
               </div>
 
@@ -327,9 +328,9 @@ export default function HomePage() {
                 <div className="w-20 h-20 bg-gradient-to-br from-purple-500 via-cyan-500 to-fuchsia-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-purple-500/50">
                   <span className="text-3xl font-bold text-white">3</span>
                 </div>
-                <h3 className="text-2xl font-bold text-purple-400 mb-4">Get Things Done</h3>
+                <h3 className="text-2xl font-bold text-purple-400 mb-4">{t('landing.step3Title')}</h3>
                 <p className="text-muted-foreground leading-relaxed">
-                  Track progress, complete tasks, and watch your productivity soar.
+                  {t('landing.step3Desc')}
                 </p>
               </div>
             </div>
@@ -344,19 +345,19 @@ export default function HomePage() {
 
           <div className="relative">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Ready to Transform Your Productivity?
+              {t('landing.readyTransform')}
             </h2>
             <p className="text-xl text-cyan-100 mb-8 max-w-2xl mx-auto">
-              Join thousands of users who are already managing their tasks smarter, not harder.
+              {t('landing.joinThousands')}
             </p>
             <Link
               href="/auth/signup"
               className="inline-block px-10 py-4 bg-white text-purple-600 rounded-xl font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-200 border-2 border-white"
             >
-              Start Your Free Trial
+              {t('landing.startFreeTrial')}
             </Link>
             <p className="text-cyan-100 mt-4 text-sm">
-              No credit card required - Free forever plan available
+              {t('landing.noCreditCardFree')}
             </p>
           </div>
         </div>
@@ -372,39 +373,39 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <span className="text-xl font-bold text-foreground">Neural Tasks</span>
+              <span className="text-xl font-bold text-foreground">{t('landing.neuralTasks')}</span>
             </div>
             <p className="text-muted-foreground/70 text-sm">
-              The most intuitive way to manage your tasks and boost productivity.
+              {t('landing.footerDescription')}
             </p>
           </div>
 
           <div>
-            <h4 className="font-semibold text-cyan-400 mb-4">Product</h4>
+            <h4 className="font-semibold text-cyan-400 mb-4">{t('landing.product')}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground/70">
-              <li><a href="#features" className="hover:text-cyan-400 transition-colors">Features</a></li>
-              <li><a href="#" className="hover:text-cyan-400 transition-colors">Pricing</a></li>
-              <li><a href="#" className="hover:text-cyan-400 transition-colors">Integrations</a></li>
-              <li><a href="#" className="hover:text-cyan-400 transition-colors">API</a></li>
+              <li><a href="#features" className="hover:text-cyan-400 transition-colors">{t('landing.features')}</a></li>
+              <li><a href="#" className="hover:text-cyan-400 transition-colors">{t('landing.pricing')}</a></li>
+              <li><a href="#" className="hover:text-cyan-400 transition-colors">{t('landing.integrations')}</a></li>
+              <li><a href="#" className="hover:text-cyan-400 transition-colors">{t('landing.api')}</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-semibold text-fuchsia-400 mb-4">Company</h4>
+            <h4 className="font-semibold text-fuchsia-400 mb-4">{t('landing.company')}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground/70">
-              <li><a href="#" className="hover:text-fuchsia-400 transition-colors">About</a></li>
-              <li><a href="#" className="hover:text-fuchsia-400 transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-fuchsia-400 transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-fuchsia-400 transition-colors">Contact</a></li>
+              <li><a href="#" className="hover:text-fuchsia-400 transition-colors">{t('landing.about')}</a></li>
+              <li><a href="#" className="hover:text-fuchsia-400 transition-colors">{t('landing.blog')}</a></li>
+              <li><a href="#" className="hover:text-fuchsia-400 transition-colors">{t('landing.careers')}</a></li>
+              <li><a href="#" className="hover:text-fuchsia-400 transition-colors">{t('landing.contact')}</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-semibold text-purple-400 mb-4">Legal</h4>
+            <h4 className="font-semibold text-purple-400 mb-4">{t('landing.legal')}</h4>
             <ul className="space-y-2 text-sm text-muted-foreground/70">
-              <li><a href="#" className="hover:text-purple-400 transition-colors">Privacy</a></li>
-              <li><a href="#" className="hover:text-purple-400 transition-colors">Terms</a></li>
-              <li><a href="#" className="hover:text-purple-400 transition-colors">Security</a></li>
+              <li><a href="#" className="hover:text-purple-400 transition-colors">{t('landing.privacy')}</a></li>
+              <li><a href="#" className="hover:text-purple-400 transition-colors">{t('landing.terms')}</a></li>
+              <li><a href="#" className="hover:text-purple-400 transition-colors">{t('landing.security')}</a></li>
             </ul>
           </div>
         </div>

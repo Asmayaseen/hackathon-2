@@ -22,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
+    <html lang="en" dir="auto" suppressHydrationWarning>
       <body className="font-sans antialiased">
         {/* ChatKit CDN script for widget styling */}
         <Script
