@@ -1,136 +1,104 @@
 """
-ChatKit Python Backend Server for Evolution Todo.
+ChatKit-compatible Server for Evolution Todo.
 
 Task: T-CHATKIT-001
 Spec: specs/phase-3-chatbot/spec.md
 
-Implements ChatKitServer[RequestContext] from OpenAI Agents SDK to provide
-conversational task management through ChatKit frontend.
+Implements ChatKit server protocol WITHOUT depending on the Python 'chatkit'
+package (which is a placeholder v0.0.1 with no code).
 
-Architecture:
-- Extends ChatKitServer[RequestContext] for user isolation
-- Integrates with existing MCP tools (11 tools in mcp_server.py)
-- Stateless design with PostgreSQL persistence
-- All conversation state stored in database (Conversation + Message models)
-- User authentication via RequestContext.user_id
+Protocol:
+  - respond(): stream events as SSE
+  - get_threads(): list conversations
+  - get_thread_messages(): messages in a thread
+  - delete_thread(): delete conversation
 
-Integration:
-- MCP Tools: Defined in mcp_server.py (add_task, list_tasks, etc.)
-- Agent Logic: run_agent() in agent.py
-- Database: Neon PostgreSQL via models.py
-- Authentication: JWT via middleware/auth.py
+All state is stored in PostgreSQL (stateless architecture).
 """
 from typing import AsyncIterator, List, Dict, Optional
 from dataclasses import dataclass
 from datetime import datetime
 
-from chatkit import ChatKitServer, RequestContext, ResponseEvent, TextEvent, DoneEvent
 from sqlmodel import Session, select
-from openai import OpenAI
 import os
 
-from models import Conversation, Message, User
+from models import Conversation, Message
 from db import engine
 from agent import run_agent
 
 
+# ── Event types (ChatKit-compatible SSE events) ───────────────────────────────
+
 @dataclass
-class TodoRequestContext(RequestContext):
-    """
-    Request context for user-scoped operations.
+class TextEvent:
+    text: str
 
-    Extends ChatKitServer RequestContext to include user_id for:
-    - User isolation: Each user sees only their own conversations/tasks
-    - MCP tool authentication: user_id passed to all tool calls
-    - Database filtering: All queries scoped by user_id
+    def to_sse(self) -> str:
+        import json
+        return f"data: {json.dumps({'type': 'text', 'text': self.text})}\n\n"
 
-    Fields:
-        user_id: Authenticated user ID from JWT token
-        user_name: User's display name (optional, for personalization)
-        user_email: User's email (optional, for notifications)
-    """
+
+@dataclass
+class DoneEvent:
+    thread_id: Optional[str] = None
+    error: Optional[str] = None
+
+    def to_sse(self) -> str:
+        import json
+        payload: Dict = {"type": "done"}
+        if self.thread_id:
+            payload["thread_id"] = self.thread_id
+        if self.error:
+            payload["error"] = self.error
+        return f"data: {json.dumps(payload)}\n\n"
+
+
+@dataclass
+class TodoRequestContext:
+    """Request context carrying authenticated user info."""
     user_id: str
     user_name: Optional[str] = None
     user_email: Optional[str] = None
 
 
-class EvolutionTodoChatKitServer(ChatKitServer[TodoRequestContext]):
+# ── ChatKit Server ────────────────────────────────────────────────────────────
+
+class EvolutionTodoChatKitServer:
     """
-    ChatKit server implementation for Evolution Todo chatbot.
+    ChatKit-compatible server for Evolution Todo.
 
-    Responsibilities:
-    - Handle chat requests through OpenAI ChatKit protocol
-    - Integrate with existing MCP tools for task management
-    - Persist conversation history to database (stateless architecture)
-    - Enforce user isolation via RequestContext
-
-    Base Class Behavior (DO NOT override):
-    - threads.list: List conversations for user
-    - threads.items.list: List messages in conversation
-    - threads.delete: Delete conversation
-
-    Custom Behavior (Override respond()):
-    - Process user messages through AI agent
-    - Call MCP tools for task operations
-    - Store messages in database
-    - Stream responses to client
+    Stateless design: all state in PostgreSQL.
+    Server restart does NOT lose conversation context.
+    K8s-ready: any instance can handle any request.
     """
-
-    def __init__(self):
-        """Initialize ChatKit server with database connection."""
-        super().__init__()
-        self.openai_client = OpenAI(
-            api_key=os.getenv("GROQ_API_KEY") or os.getenv("OPENAI_API_KEY"),
-            base_url=os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
-                     if os.getenv("GROQ_API_KEY") else None
-        )
-        print("✅ ChatKit Server Initialized")
 
     async def respond(
         self,
         context: TodoRequestContext,
         thread_id: Optional[str],
-        user_message: str
-    ) -> AsyncIterator[ResponseEvent]:
+        user_message: str,
+    ) -> AsyncIterator:
         """
-        Process user message and generate AI response with tool execution.
+        Process user message and yield SSE events.
 
         Flow:
-        1. Load or create conversation (thread_id maps to conversation_id)
-        2. Load conversation history from database
-        3. Store user message to database
-        4. Run AI agent with conversation context
-        5. AI agent calls MCP tools as needed
-        6. Store assistant response to database
-        7. Stream response events to client
-
-        Args:
-            context: TodoRequestContext with user_id for authentication
-            thread_id: Optional thread ID (conversation_id from database)
-            user_message: User's input message
-
-        Yields:
-            ResponseEvent: Stream of text events and completion event
-
-        Architecture Notes:
-        - Server is STATELESS: All state in database
-        - Conversation history loaded from DB on each request
-        - Server restart does NOT lose conversation context
-        - Any server instance can handle any request (K8s-ready)
+        1. Load or create conversation (thread)
+        2. Load history from DB
+        3. Store user message
+        4. Run AI agent (Agents SDK Runner.run())
+        5. Store assistant response
+        6. Yield TextEvent + DoneEvent
         """
         user_id = context.user_id
 
         with Session(engine) as session:
             # 1. Load or create conversation
             if thread_id:
-                # Convert thread_id to conversation_id (they are the same)
                 conversation = session.get(Conversation, int(thread_id))
                 if not conversation or conversation.user_id != user_id:
-                    # Thread doesn't exist or doesn't belong to user
                     yield DoneEvent(error="Thread not found")
                     return
             else:
-                # Create new conversation
                 conversation = Conversation(user_id=user_id)
                 session.add(conversation)
                 session.commit()
@@ -138,188 +106,115 @@ class EvolutionTodoChatKitServer(ChatKitServer[TodoRequestContext]):
 
             conversation_id = conversation.id
 
-            # 2. Load conversation history from database (STATELESS)
-            messages_query = select(Message).where(
-                Message.conversation_id == conversation_id
-            ).order_by(Message.created_at)
+            # 2. Load history from DB
+            db_messages = session.exec(
+                select(Message)
+                .where(Message.conversation_id == conversation_id)
+                .order_by(Message.created_at)
+            ).all()
+            history = [{"role": m.role, "content": m.content} for m in db_messages]
 
-            db_messages = session.exec(messages_query).all()
-            conversation_history = [
-                {"role": msg.role, "content": msg.content}
-                for msg in db_messages
-            ]
-
-            # 3. Store user message to database BEFORE processing
-            # (Ensures no message loss even if AI agent fails)
-            user_msg = Message(
+            # 3. Store user message
+            session.add(Message(
                 conversation_id=conversation_id,
                 user_id=user_id,
                 role="user",
                 content=user_message,
-                created_at=datetime.utcnow()
-            )
-            session.add(user_msg)
+                created_at=datetime.utcnow(),
+            ))
             session.commit()
 
-            # 4. Run AI agent with full conversation context
+            # 4. Run AI agent (openai-agents SDK)
             try:
                 assistant_response, tool_calls = await run_agent(
-                    conversation_history,
-                    user_message,
-                    user_id  # Pass user_id for MCP tool authentication
+                    history, user_message, user_id
                 )
             except Exception as e:
-                # Log error and return error event
-                print(f"❌ AI Agent Error: {e}")
-
-                # Store error message in database
-                error_msg = Message(
+                print(f"❌ Agent error: {e}")
+                session.add(Message(
                     conversation_id=conversation_id,
                     user_id=user_id,
                     role="assistant",
-                    content=f"❌ Error processing message: {str(e)}",
+                    content=f"❌ Error: {e}",
                     tool_calls=[],
-                    created_at=datetime.utcnow()
-                )
-                session.add(error_msg)
+                    created_at=datetime.utcnow(),
+                ))
                 session.commit()
-
                 yield DoneEvent(error=str(e))
                 return
 
-            # 5. Store assistant response to database
-            assistant_msg = Message(
+            # 5. Store assistant response
+            session.add(Message(
                 conversation_id=conversation_id,
                 user_id=user_id,
                 role="assistant",
                 content=assistant_response,
                 tool_calls=tool_calls,
-                created_at=datetime.utcnow()
-            )
-            session.add(assistant_msg)
-
-            # Update conversation timestamp
+                created_at=datetime.utcnow(),
+            ))
             conversation.updated_at = datetime.utcnow()
             session.add(conversation)
             session.commit()
 
-            # 6. Stream response to client
-            # ChatKit expects streaming events for better UX
+            # 6. Yield events
             yield TextEvent(text=assistant_response)
             yield DoneEvent(thread_id=str(conversation_id))
 
-    async def get_threads(
-        self,
-        context: TodoRequestContext
-    ) -> List[Dict]:
-        """
-        Get all conversations (threads) for the authenticated user.
-
-        Called by ChatKit when client requests threads.list.
-
-        Args:
-            context: TodoRequestContext with user_id
-
-        Returns:
-            List of thread dictionaries with id, created_at, updated_at
-        """
-        user_id = context.user_id
-
+    async def get_threads(self, context: TodoRequestContext) -> List[Dict]:
+        """Return all conversations for a user."""
         with Session(engine) as session:
-            conversations_query = select(Conversation).where(
-                Conversation.user_id == user_id
-            ).order_by(Conversation.updated_at.desc())
-
-            conversations = session.exec(conversations_query).all()
-
+            convs = session.exec(
+                select(Conversation)
+                .where(Conversation.user_id == context.user_id)
+                .order_by(Conversation.updated_at.desc())
+            ).all()
             return [
                 {
-                    "id": str(conv.id),
-                    "created_at": conv.created_at.isoformat(),
-                    "updated_at": conv.updated_at.isoformat()
+                    "id": str(c.id),
+                    "created_at": c.created_at.isoformat(),
+                    "updated_at": c.updated_at.isoformat(),
                 }
-                for conv in conversations
+                for c in convs
             ]
 
     async def get_thread_messages(
-        self,
-        context: TodoRequestContext,
-        thread_id: str
+        self, context: TodoRequestContext, thread_id: str
     ) -> List[Dict]:
-        """
-        Get all messages in a conversation thread.
-
-        Called by ChatKit when client requests threads.items.list.
-
-        Args:
-            context: TodoRequestContext with user_id
-            thread_id: Thread ID (conversation_id)
-
-        Returns:
-            List of message dictionaries with role, content, timestamp
-        """
-        user_id = context.user_id
-
+        """Return messages in a thread."""
         with Session(engine) as session:
-            # Verify conversation belongs to user
-            conversation = session.get(Conversation, int(thread_id))
-            if not conversation or conversation.user_id != user_id:
+            conv = session.get(Conversation, int(thread_id))
+            if not conv or conv.user_id != context.user_id:
                 return []
-
-            # Get all messages
-            messages_query = select(Message).where(
-                Message.conversation_id == int(thread_id)
-            ).order_by(Message.created_at)
-
-            messages = session.exec(messages_query).all()
-
+            msgs = session.exec(
+                select(Message)
+                .where(Message.conversation_id == int(thread_id))
+                .order_by(Message.created_at)
+            ).all()
             return [
                 {
-                    "role": msg.role,
-                    "content": msg.content,
-                    "created_at": msg.created_at.isoformat()
+                    "role": m.role,
+                    "content": m.content,
+                    "created_at": m.created_at.isoformat(),
                 }
-                for msg in messages
+                for m in msgs
             ]
 
     async def delete_thread(
-        self,
-        context: TodoRequestContext,
-        thread_id: str
+        self, context: TodoRequestContext, thread_id: str
     ) -> bool:
-        """
-        Delete a conversation thread and all its messages.
-
-        Called by ChatKit when client requests threads.delete.
-
-        Args:
-            context: TodoRequestContext with user_id
-            thread_id: Thread ID to delete
-
-        Returns:
-            True if deleted successfully, False otherwise
-        """
-        user_id = context.user_id
-
+        """Delete a thread and all its messages."""
         with Session(engine) as session:
-            conversation = session.get(Conversation, int(thread_id))
-            if not conversation or conversation.user_id != user_id:
+            conv = session.get(Conversation, int(thread_id))
+            if not conv or conv.user_id != context.user_id:
                 return False
-
-            # Delete all messages first (cascade)
-            messages_query = select(Message).where(
-                Message.conversation_id == int(thread_id)
-            )
-            messages = session.exec(messages_query).all()
-            for msg in messages:
+            for msg in session.exec(
+                select(Message).where(Message.conversation_id == int(thread_id))
+            ).all():
                 session.delete(msg)
-
-            # Delete conversation
-            session.delete(conversation)
+            session.delete(conv)
             session.commit()
-
             return True
 
 
-# Singleton instance
+# Singleton
 chatkit_server = EvolutionTodoChatKitServer()

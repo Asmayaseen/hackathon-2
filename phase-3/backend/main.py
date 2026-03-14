@@ -105,8 +105,7 @@ from routes.stats import router as stats_router
 from routes.export_import import router as export_import_router
 from routes.chat import router as chat_router  # Phase III: AI Chatbot
 from routes.voice import router as voice_router  # Phase III: Voice Input (Whisper)
-# ChatKit Integration: Waiting for official OpenAI ChatKit SDK release
-# from routes.chatkit import router as chatkit_router  # Phase III: ChatKit Integration
+from routes.chatkit import router as chatkit_router  # Phase III: ChatKit Integration
 
 app.include_router(tasks_router)
 app.include_router(auth_router)
@@ -120,7 +119,7 @@ app.include_router(stats_router)
 app.include_router(export_import_router)
 app.include_router(chat_router)  # Phase III: AI Chatbot (T-CHAT-012)
 app.include_router(voice_router)  # Phase III: Voice Input (T-CHAT-015)
-# app.include_router(chatkit_router)  # Phase III: ChatKit Integration (T-CHATKIT-003)
+app.include_router(chatkit_router)  # Phase III: ChatKit Integration (T-CHATKIT-003)
 
 
 # Phase III: ChatKit Integration (T-CHATKIT-003)

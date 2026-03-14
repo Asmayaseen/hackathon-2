@@ -136,7 +136,11 @@
     "transcribeError": "Failed to transcribe audio. Please try again.",
     "errorPrefix": "Error:",
     "somethingWentWrong": "Something went wrong",
-    "manageFullPage": "Manage your tasks using natural language in English or Urdu"
+    "manageFullPage": "Manage your tasks using natural language in English or Urdu",
+    "open": "Open chat",
+    "close": "Close chat",
+    "subtitle": "Manage tasks in English or Urdu",
+    "loading": "Loading chat…"
   },
   "nav": {
     "tasks": "Tasks",

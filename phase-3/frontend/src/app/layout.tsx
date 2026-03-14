@@ -29,9 +29,10 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} antialiased`}>
         {/* ChatKit CDN script for widget styling */}
+        {/* MUST be beforeInteractive — web components need to register before React hydrates */}
         <Script
           src="https://cdn.platform.openai.com/deployments/chatkit/chatkit.js"
-          strategy="afterInteractive"
+          strategy="beforeInteractive"
         />
         <ThemeProvider
           attribute="class"

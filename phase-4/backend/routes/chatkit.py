@@ -143,22 +143,14 @@ async def chatkit_respond(
     # Create RequestContext with authenticated user
     context = TodoRequestContext(user_id=authenticated_user_id)
 
-    # Stream response events
+    # Stream response events using TextEvent.to_sse() / DoneEvent.to_sse()
     async def event_stream():
         try:
             async for event in chatkit_server.respond(context, thread_id, user_message):
-                # Convert event to JSON and yield
-                event_data = {
-                    "type": event.__class__.__name__,
-                    "data": event.dict() if hasattr(event, 'dict') else str(event)
-                }
-                yield f"data: {json.dumps(event_data)}\n\n"
+                yield event.to_sse()
         except Exception as e:
-            error_event = {
-                "type": "error",
-                "data": {"error": str(e)}
-            }
-            yield f"data: {json.dumps(error_event)}\n\n"
+            import json
+            yield f"data: {json.dumps({'type': 'error', 'error': str(e)})}\n\n"
 
     return StreamingResponse(
         event_stream(),
