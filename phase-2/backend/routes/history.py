@@ -9,7 +9,7 @@ from sqlmodel import Session, select
 from typing import List, Optional
 from datetime import datetime
 
-from models import TaskHistory
+from models import TaskHistory, Task
 from db import get_session
 from middleware.auth import verify_token
 
@@ -56,9 +56,25 @@ async def get_task_history(
 
     history = session.exec(query).all()
 
+    # Enrich with task_title and details for frontend display
+    enriched = []
+    for entry in history:
+        task = session.get(Task, entry.task_id) if entry.task_id else None
+        enriched.append({
+            "id": entry.id,
+            "task_id": entry.task_id,
+            "user_id": entry.user_id,
+            "action": entry.action,
+            "task_title": task.title if task else None,
+            "details": f"{entry.action.replace('_', ' ').title()}" + (f": \"{task.title}\"" if task else ""),
+            "old_value": entry.old_value,
+            "new_value": entry.new_value,
+            "timestamp": entry.timestamp.isoformat() if entry.timestamp else None,
+        })
+
     return {
-        "history": history,
-        "count": len(history),
+        "history": enriched,
+        "count": len(enriched),
         "offset": offset,
         "limit": limit
     }

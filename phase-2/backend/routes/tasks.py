@@ -9,11 +9,68 @@ from sqlmodel import Session, select
 from typing import Optional
 from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel, Field
-from models import Task
+from models import Task, TaskHistory, Notification
 from db import get_session
 from middleware.auth import verify_token
 
 router = APIRouter(prefix="/api", tags=["tasks"])
+
+
+def _log_history(session: Session, task: Task, action: str, old_value: dict = None, new_value: dict = None):
+    """Log a task history entry."""
+    try:
+        entry = TaskHistory(
+            task_id=task.id,
+            user_id=task.user_id,
+            action=action,
+            old_value=old_value,
+            new_value=new_value,
+            timestamp=datetime.now(timezone.utc),
+        )
+        session.add(entry)
+    except Exception:
+        pass  # History logging must never break the main operation
+
+
+def _create_notification(session: Session, task: Task):
+    """Create a notification for a task with a due date."""
+    if not task.due_date:
+        return
+    try:
+        # Remove any existing unsent notifications for this task
+        existing = session.exec(
+            select(Notification).where(
+                Notification.task_id == task.id,
+                Notification.sent == False
+            )
+        ).all()
+        for n in existing:
+            session.delete(n)
+
+        # Schedule notification: reminder_offset minutes before due date (default 60)
+        offset_minutes = task.reminder_offset if task.reminder_offset else 60
+        # Ensure due_date is timezone-aware
+        due_date = task.due_date
+        if due_date.tzinfo is None:
+            due_date = due_date.replace(tzinfo=timezone.utc)
+        scheduled = due_date - timedelta(minutes=offset_minutes)
+
+        # Only create if scheduled time is in the future
+        now_utc = datetime.now(timezone.utc)
+        if scheduled <= now_utc:
+            scheduled = now_utc + timedelta(minutes=5)  # Fallback: 5 mins from now
+
+        notification = Notification(
+            task_id=task.id,
+            user_id=task.user_id,
+            scheduled_time=scheduled,
+            sent=False,
+            notification_type="reminder",
+            created_at=now_utc,
+        )
+        session.add(notification)
+    except Exception:
+        pass  # Notification creation must never break the main operation
 
 
 # Request/Response Models
@@ -238,6 +295,11 @@ async def create_task(
     session.commit()
     session.refresh(new_task)
 
+    # Log history and create notification
+    _log_history(session, new_task, "task_created", new_value={"title": new_task.title, "priority": new_task.priority})
+    _create_notification(session, new_task)
+    session.commit()
+
     return new_task
 
 
@@ -325,6 +387,8 @@ async def update_task(
         )
 
     # Update fields if provided
+    old_snapshot = {"title": task.title, "priority": task.priority, "completed": task.completed}
+
     if task_data.title is not None:
         task.title = task_data.title
     if task_data.description is not None:
@@ -369,6 +433,13 @@ async def update_task(
     session.commit()
     session.refresh(task)
 
+    # Log history and update notification
+    new_snapshot = {"title": task.title, "priority": task.priority, "completed": task.completed}
+    _log_history(session, task, "task_updated", old_value=old_snapshot, new_value=new_snapshot)
+    if task_data.due_date is not None or task_data.reminder_offset is not None:
+        _create_notification(session, task)
+    session.commit()
+
     return task
 
 
@@ -410,6 +481,10 @@ async def delete_task(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Task not found"
         )
+
+    # Log history before deletion (task_id still valid before delete)
+    _log_history(session, task, "task_deleted", old_value={"title": task.title})
+    session.commit()
 
     # Delete task
     session.delete(task)
@@ -458,6 +533,7 @@ async def toggle_task_completion(
         )
 
     # Toggle completion status
+    was_completed = task.completed
     task.completed = not task.completed
     task.updated_at = datetime.now(timezone.utc)
 
@@ -465,5 +541,10 @@ async def toggle_task_completion(
     session.add(task)
     session.commit()
     session.refresh(task)
+
+    # Log history
+    action = "task_completed" if task.completed else "task_uncompleted"
+    _log_history(session, task, action, old_value={"completed": was_completed}, new_value={"completed": task.completed})
+    session.commit()
 
     return task
